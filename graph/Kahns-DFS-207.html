@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 207 - Java DFS Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for true/visited */
+        --active: #ff9800;     /* Orange for active processing */
+        --path: #ff9800;       /* Orange for current DFS path */
+        --danger: #f44336;     /* Red for cycles */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Stack & Arrays */
+    .stackFrame {
+        border: 1px solid #444;
+        background: #1e1e1e;
+        margin: 4px 0;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        color: #d4d4d4;
+        border-left: 3px solid var(--path);
+    }
+    
+    .stackFrame.main-loop {
+        border-left: 3px solid #555;
+    }
+
+    .array-container { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
+    .array-item { display: flex; flex-direction: column; align-items: center; }
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .arrayCell {
+        width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 4px; background: #1e1e1e; font-weight: bold; font-size: 13px;
+        transition: all 0.3s;
+    }
+
+    .trueCell { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 0 8px rgba(76,175,80,0.4); }
+    .pathCell { background: var(--path); color: black; border-color: var(--path); box-shadow: 0 0 8px rgba(255,152,0,0.4); }
+
+    /* Graph */
+    svg { background: #1e1e1e; border-radius: 6px; width: 100%; border: 1px solid var(--border); transition: border-color 0.5s; }
+
+    /* Log */
+    .log {
+        height: 140px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-cycle { color: var(--danger); font-weight: bold; }
+    .log-success { color: var(--accent); font-weight: bold;}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="cycle">1. Simple Cycle (3 nodes)</option>
+            <option value="acyclic">2. Linear Acyclic (4 nodes)</option>
+            <option value="forest">3. Disconnected Forest (4 nodes)</option>
+            <option value="complexCycle">4. Complex Cycle (4 nodes)</option>
+            <option value="hub">5. Independent Hub (4 nodes)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Courses:</label>
+        <input id="numCourses" style="width: 40px;" value="3">
+        <label>Edges (prereq list):</label>
+        <textarea id="edges" rows="1" cols="15">1 0&#10;2 1&#10;0 2</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run DFS</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (DFS CYCLE DETECTION)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Arrays State</h3>
+            <div style="margin-bottom: 5px; font-size:12px; color:#aaa;">vis[] (Global Visited)</div>
+            <div id="vis" class="array-container"></div>
+            
+            <div style="margin-bottom: 5px; font-size:12px; color:#aaa;">path[] (Current DFS Path)</div>
+            <div id="path" class="array-container"></div>
+            
+            <h3 style="margin-top: 15px;">JVM Call Stack</h3>
+            <div id="stack" style="max-height: 150px; overflow-y: auto; padding-right: 5px;"></div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Directed Graph Visualization</h3>
+            <svg id="graph" style="flex: 1; min-height: 250px;"></svg>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// Watch for resizes to re-center the SVG Graph
+const resizeObserver = new ResizeObserver(() => {
+    if (adj && adj.length > 0) {
+        let currentPtr = ptr;
+        drawGraph();
+        if (events.length > 0) {
+            jumpToStep(currentPtr);
+        }
+    }
+});
+resizeObserver.observe(document.getElementById('graph'));
+
+// --- DFS CYCLE DETECTION LOGIC ---
+const JAVA_CODE = [
+    "for (int i = 0; i < numCourses; i++)",
+    "    if (!vis[i] && dfs(i, adj, vis, path)) return false;",
+    "",
+    "private boolean dfs(...) {",
+    "    vis[node] = path[node] = true;",
+    "    for (int next : adj.get(node))",
+    "        if (!vis[next] && dfs(next))",
+    "            return true;",
+    "        else if (path[next])",
+    "            return true;",
+    "    path[node] = false;",
+    "    return false;",
+    "}"
+];
+
+const TEST_CASES = {
+    cycle: { n: 3, edges: "1 0\n2 1\n0 2" },
+    acyclic: { n: 4, edges: "1 0\n2 1\n3 2" },
+    forest: { n: 4, edges: "1 0\n3 2" },
+    complexCycle: { n: 4, edges: "1 0\n2 1\n3 2\n1 3" },
+    hub: { n: 4, edges: "1 0\n2 0\n3 0" }
+};
+
+let adj = [], vis = [], pathArr = [], positions = [], events = [], ptr = 0, timer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const val = document.getElementById("testCases").value;
+    const tc = TEST_CASES[val];
+    document.getElementById("numCourses").value = tc.n;
+    document.getElementById("edges").value = tc.edges;
+}
+
+function buildGraph() {
+    const n = parseInt(document.getElementById("numCourses").value) || 0;
+    adj = Array.from({length: n}, () => []);
+    
+    const lines = document.getElementById("edges").value.trim().split("\n");
+    for(const line of lines) {
+        if(!line.trim()) continue;
+        const [course, prereq] = line.split(/\s+/).map(Number);
+        if(!isNaN(course) && !isNaN(prereq)) {
+            adj[prereq].push(course);
+        }
+    }
+    vis = Array(n).fill(false);
+    pathArr = Array(n).fill(false);
+
+    drawGraph();
+    renderArrays();
+}
+
+function drawGraph() {
+    const svg = document.getElementById("graph");
+    const rect = svg.getBoundingClientRect();
+    const cx = rect.width / 2 || 300;
+    const cy = rect.height / 2 || 200;
+    const rLayout = Math.min(cx, cy) - 50;
+    const rNode = 22;
+
+    positions = [];
+    const n = adj.length;
+
+    let svgContent = `
+    <defs>
+        <filter id="glow-path" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-cycle" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#888" />
+        </marker>
+        <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--path)" />
+        </marker>
+        <marker id="arrow-cycle" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--danger)" />
+        </marker>
+    </defs>`;
+
+    for(let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n - (Math.PI / 2);
+        positions.push({ x: cx + rLayout * Math.cos(angle), y: cy + rLayout * Math.sin(angle) });
+    }
+
+    for(let u = 0; u < n; u++) {
+        for(const v of adj[u]) {
+            const p1 = positions[u];
+            const p2 = positions[v];
+            
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dist = Math.hypot(dx, dy);
+            
+            const startX = p1.x + (dx * rNode) / dist;
+            const startY = p1.y + (dy * rNode) / dist;
+            const endX = p2.x - (dx * (rNode + 5)) / dist; 
+            const endY = p2.y - (dy * (rNode + 5)) / dist;
+
+            svgContent += `<line id="edge-${u}-${v}" x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>`;
+        }
+    }
+
+    for(let i = 0; i < n; i++) {
+        const p = positions[i];
+        svgContent += `
+        <g id="node-group-${i}">
+            <circle id="node${i}" cx="${p.x}" cy="${p.y}" r="${rNode}" fill="#333" stroke="#777" stroke-width="2"/>
+            <text x="${p.x}" y="${p.y}" fill="white" font-size="14" font-family="Consolas" text-anchor="middle" dominant-baseline="central">${i}</text>
+        </g>`;
+    }
+    svg.innerHTML = svgContent;
+}
+
+function colorNode(i, color) {
+    const n = document.getElementById("node" + i);
+    if(n) {
+        n.setAttribute("fill", color);
+        n.setAttribute("stroke", "white");
+        if(color === "var(--path)" || color === "#ff9800") n.setAttribute("filter", "url(#glow-path)");
+        else if(color === "var(--danger)" || color === "#f44336") n.setAttribute("filter", "url(#glow-cycle)");
+        else n.removeAttribute("filter");
+    }
+}
+
+function renderArrays() {
+    const createHTML = (arr, activeClass) => {
+        return arr.map((val, i) => `
+            <div class="array-item">
+                <span class="array-idx">${i}</span>
+                <span class="arrayCell ${val ? activeClass : ''}">${val ? 'T' : 'F'}</span>
+            </div>
+        `).join('');
+    };
+    document.getElementById("vis").innerHTML = createHTML(vis, 'trueCell');
+    document.getElementById("path").innerHTML = createHTML(pathArr, 'pathCell');
+}
+
+function renderStack(stack) {
+    let html = stack.slice().reverse().map(node => `<div class='stackFrame'>dfs(node: ${node})</div>`).join('');
+    html += `<div class='stackFrame main-loop'>main() - Graph Loop</div>`;
+    document.getElementById("stack").innerHTML = html;
+}
+
+// DFS Generator
+function* dfs(node, stack) {
+    yield { line: 4, type: "ENTER", node, stack: [...stack, node] };
+    vis[node] = true;
+    pathArr[node] = true;
+    stack.push(node);
+
+    for(const next of adj[node]) {
+        yield { line: 5, type: "CHECK_EDGE", node, next, stack: [...stack] };
+
+        if(!vis[next]) {
+            yield { line: 6, type: "RECURSE", node, next, stack: [...stack] };
+            const found = yield* dfs(next, stack);
+            if(found) {
+                yield { line: 7, type: "RETURN_TRUE", stack: [...stack] };
+                return true;
+            }
+        } else if(pathArr[next]) {
+            yield { line: 8, type: "CYCLE", node, next, stack: [...stack] };
+            return true;
+        }
+    }
+
+    yield { line: 10, type: "BACKTRACK", node, stack: [...stack] };
+    pathArr[node] = false;
+    stack.pop();
+    return false;
+}
+
+function prepareExecution() {
+    buildGraph();
+    events = [];
+    const stack = [];
+
+    for(let i = 0; i < adj.length; i++) {
+        if(!vis[i]) {
+            events.push({ line: 1, type: "MAIN_LOOP", node: i });
+            const g = dfs(i, stack);
+            while(true) {
+                const r = g.next();
+                if(r.done) break;
+                events.push(r.value);
+            }
+        }
+    }
+    
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+}
+
+function applyEventData(e) {
+    switch(e.type) {
+        case "MAIN_LOOP":
+            log(`Checking node ${e.node} in main loop...`);
+            break;
+        case "ENTER":
+            vis[e.node] = true;
+            pathArr[e.node] = true;
+            colorNode(e.node, "var(--path)");
+            log(`→ Enter dfs(${e.node}) - Added to path[]`);
+            break;
+        case "CHECK_EDGE":
+            log(`  Exploring edge: ${e.node} -> ${e.next}`);
+            const edge = document.getElementById(`edge-${e.node}-${e.next}`);
+            if(edge) {
+                edge.setAttribute("stroke", "var(--path)");
+                edge.setAttribute("stroke-width", "3");
+                edge.setAttribute("filter", "url(#glow-path)");
+                edge.setAttribute("marker-end", "url(#arrow-active)");
+            }
+            break;
+        case "RECURSE":
+            log(`  Node ${e.next} unvisited. Recursing...`);
+            break;
+        case "BACKTRACK":
+            pathArr[e.node] = false;
+            colorNode(e.node, "var(--accent)");
+            log(`← Backtrack ${e.node} - Removed from path[]`);
+            break;
+        case "CYCLE":
+            colorNode(e.next, "var(--danger)");
+            const cycleEdge = document.getElementById(`edge-${e.node}-${e.next}`);
+            if(cycleEdge) {
+                cycleEdge.setAttribute("stroke", "var(--danger)");
+                cycleEdge.setAttribute("stroke-width", "3");
+                cycleEdge.setAttribute("filter", "url(#glow-cycle)");
+                cycleEdge.setAttribute("marker-end", "url(#arrow-cycle)");
+            }
+            log(`🚨 CYCLE DETECTED: Node ${e.next} is already in current path[]!`, "log-cycle");
+            break;
+        case "RETURN_TRUE":
+            log(`Returning TRUE (Cycle cascades up stack)`, "log-cycle");
+            break;
+    }
+}
+
+function jumpToStep(targetIndex) {
+    vis.fill(false);
+    pathArr.fill(false);
+    document.getElementById("log").innerHTML = "";
+    
+    for(let i = 0; i < adj.length; i++) colorNode(i, "#333");
+    document.querySelectorAll("line").forEach(l => {
+        l.setAttribute("stroke", "#555");
+        l.setAttribute("stroke-width", "2");
+        l.removeAttribute("filter");
+        l.setAttribute("marker-end", "url(#arrow)");
+    });
+
+    ptr = 0;
+    let lastStack = [];
+    let lastLine = -1;
+
+    while(ptr < targetIndex && ptr < events.length) {
+        const e = events[ptr++];
+        if (e.line !== undefined) lastLine = e.line;
+        if (e.stack) lastStack = e.stack;
+        applyEventData(e);
+    }
+
+    renderArrays();
+    renderStack(lastStack);
+    
+    if (lastLine !== -1) highlight(lastLine);
+    else document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+}
+
+function nextStep() {
+    if(ptr >= events.length) {
+        if(ptr === events.length) {
+            log("[System] Execution Finished.", "log-success");
+            ptr++; 
+        }
+        pause();
+        return;
+    }
+    jumpToStep(ptr + 1);
+}
+
+function prevStep() {
+    pause();
+    if(ptr <= 1) {
+        jumpToStep(0);
+        return;
+    }
+    jumpToStep(ptr - 1);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) jumpToStep(0); 
+    nextStep(); 
+    timer = setInterval(nextStep, 1000);
+}
+
+function pause() {
+    if(timer) clearInterval(timer);
+}
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

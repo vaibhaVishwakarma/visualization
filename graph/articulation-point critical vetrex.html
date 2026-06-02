@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Articulation Points (Tarjan's Algorithm) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for success */
+        --active: #ff9800;     /* Orange for current node */
+        --neighbor: #2196f3;   /* Blue for neighbor being checked */
+        --danger: #f44336;     /* Red for Articulation Point */
+        --visited: #9c27b0;    /* Purple for visited back-edges */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--accent); margin-top: 4px; }
+    
+    .split-panel { display: flex; gap: 15px; margin-bottom: 0; }
+    
+    .array-container { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px;}
+    .array-item { display: flex; flex-direction: column; align-items: center; }
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .array-cell {
+        width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 4px; background: #1e1e1e; font-weight: bold; font-size: 13px;
+        transition: all 0.3s;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-unvisited { color: #666; font-weight: normal; }
+    .cell-node { border-color: var(--active); box-shadow: 0 0 8px var(--active); color: var(--active); }
+    .cell-neighbor { border-color: var(--neighbor); box-shadow: 0 0 8px var(--neighbor); color: var(--neighbor); }
+    .cell-updated { background: rgba(76, 175, 80, 0.2); color: var(--accent); transform: scale(1.1); border-color: var(--accent); box-shadow: 0 0 8px var(--accent);}
+
+    /* Graph */
+    svg { background: #1e1e1e; border-radius: 6px; width: 100%; border: 1px solid var(--border); transition: border-color 0.5s;}
+    
+    .edge-default { stroke: #555; stroke-width: 2; }
+    .edge-active { stroke: var(--active); stroke-width: 4; stroke-dasharray: 4; filter: url(#glow-active); }
+    .edge-back { stroke: var(--visited); stroke-width: 3; stroke-dasharray: 4; filter: url(#glow-back); }
+    .edge-tree { stroke: #888; stroke-width: 2;}
+
+    .node-default { fill: #333; stroke: #777; stroke-width: 2; }
+    .node-visited { fill: #1e1e1e; stroke: var(--accent); stroke-width: 2; }
+    .node-active { fill: var(--active); stroke: white; stroke-width: 3; filter: url(#glow-active); }
+    .node-neighbor { fill: var(--neighbor); stroke: white; stroke-width: 2; filter: url(#glow-neighbor); }
+    
+    /* Articulation Point Glow */
+    .node-ap { 
+        stroke: var(--danger) !important; 
+        stroke-width: 4 !important; 
+        filter: url(#glow-bridge); 
+    }
+
+    /* Log */
+    .log {
+        height: 130px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-danger { color: var(--danger); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--danger);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. Two Triangles (Bowtie, n=5)</option>
+            <option value="tc2">2. Linear Chain (n=4)</option>
+            <option value="tc3">3. Cycle (No APs, n=4)</option>
+            <option value="tc4">4. Disconnected Components</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>V:</label><input id="vInput" style="width: 30px;" value="5">
+    </div>
+
+    <div class="header-group">
+        <label>Edges:</label><textarea id="edgesInput" rows="1" cols="25">0,1&#10;1,2&#10;2,0&#10;2,3&#10;3,4&#10;4,2</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run Tarjan's AP</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (ARTICULATION POINT)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(V + E)</strong><br>
+                The DFS visits every vertex and explores every edge exactly once. Checking the conditions takes O(1) time per node.<br><br>
+                <strong>Space Complexity: O(V)</strong><br>
+                The recursive call stack can go up to O(V) deep in the worst case (a linear graph). The `time`, `low`, and `visited` arrays each take O(V) space.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Timer <div class="var-value" id="val-timer" style="color:white;">0</div></div>
+                <div class="var-box">Current Child Count <div class="var-value" id="val-child" style="color:var(--neighbor);">0</div></div>
+                <div class="var-box">Articulation Points <div class="var-value" id="val-aps" style="color:var(--danger);">-</div></div>
+            </div>
+
+            <div class="split-panel">
+                <div style="flex: 1;">
+                    <h3>time[]</h3>
+                    <div id="timeArray" class="array-container"></div>
+                </div>
+                <div style="flex: 1;">
+                    <h3>low[]</h3>
+                    <div id="lowArray" class="array-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Graph (Red Outline = Articulation Point)</h3>
+            <svg id="graph" style="flex: 1; min-height: 200px;"></svg>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+        
+        // Re-render SVG to snap positions dynamically when done dragging
+        if (graphData && graphData.v > 0 && events.length > 0) {
+            nodePositions = calculatePositions(graphData.v);
+            applyEventData(events[ptr > 0 ? ptr - 1 : 0]);
+        }
+    }
+});
+
+// Watch for resizes to re-center the SVG Graph
+const resizeObserver = new ResizeObserver(() => {
+    if (graphData && graphData.v > 0) {
+        nodePositions = calculatePositions(graphData.v);
+        if (events.length > 0 && ptr > 0) {
+            applyEventData(events[ptr - 1]);
+        }
+    }
+});
+resizeObserver.observe(document.getElementById('graph'));
+
+// --- TARJAN ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "public ArrayList<Integer> articulationPoints(int V, ArrayList<ArrayList<Integer>> adj) {",
+    "    Set<Integer> ans = new HashSet<>();",
+    "    int[] time = new int[V], low = new int[V];",
+    "    boolean[] visited = new boolean[V];",
+    "    timer = 0;",
+    "    for(int start = 0; start < V; start++) {",
+    "        if(!visited[start]) dfs(start, -1, time, low, visited, adj, ans);",
+    "    }",
+    "    if(ans.size() == 0) ans.add(-1);",
+    "    ArrayList<Integer> result = new ArrayList<>(ans);",
+    "    Collections.sort(result);",
+    "    return result;",
+    "}",
+    "",
+    "int timer = 0;",
+    "private void dfs(int u, int parent, int[] time, int[] low, boolean[] visited, ...){",
+    "    time[u] = low[u] = timer++;",
+    "    visited[u] = true;",
+    "    int child = 0;",
+    "    for(int v : adj.get(u)){",
+    "        if(v == parent) continue;",
+    "        if(visited[v]){",
+    "            low[u] = Math.min(low[u], time[v]);",
+    "        } else {",
+    "            child++;",
+    "            dfs(v, u, time, low, visited, adj, ans);",
+    "            low[u] = Math.min(low[u], low[v]);",
+    "            if(low[v] >= time[u] && parent != -1){",
+    "                ans.add(u);",
+    "            }",
+    "        }",
+    "    }",
+    "    if(parent == -1 && child > 1){",
+    "        ans.add(u);",
+    "    }",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { v: 5, e: "0,1\n1,2\n2,0\n2,3\n3,4\n4,2" },
+    tc2: { v: 4, e: "0,1\n1,2\n2,3" },
+    tc3: { v: 4, e: "0,1\n1,2\n2,3\n3,0" },
+    tc4: { v: 5, e: "0,1\n1,2\n3,4" }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let graphData = { v: 0, edges: [], adj: [] };
+let nodePositions = [];
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("vInput").value = tc.v;
+    document.getElementById("edgesInput").value = tc.e;
+}
+
+function buildGraphData() {
+    const v = parseInt(document.getElementById("vInput").value);
+    let edgesRaw = document.getElementById("edgesInput").value.trim().split("\n")
+        .map(l => l.split(",").map(Number))
+        .filter(e => e.length === 2);
+    
+    let adj = Array.from({length: v}, () => []);
+    edgesRaw.forEach(e => {
+        adj[e[0]].push(e[1]);
+        adj[e[1]].push(e[0]);
+    });
+    
+    return {v, edges: edgesRaw, adj};
+}
+
+function calculatePositions(v) {
+    const svg = document.getElementById("graph");
+    const rect = svg.getBoundingClientRect();
+    const cx = (rect.width / 2) || 200, cy = (rect.height / 2) || 100, rLayout = Math.min(cx, cy) - 25;
+
+    let positions = [];
+    for(let i = 0; i < v; i++) {
+        const angle = (2 * Math.PI * i) / v - (Math.PI / 2);
+        positions.push({ x: cx + rLayout * Math.cos(angle), y: cy + rLayout * Math.sin(angle) });
+    }
+    return positions;
+}
+
+function* simulateDFS() {
+    const {v, edges, adj} = buildGraphData();
+    let time = Array(v).fill(-1);
+    let low = Array(v).fill(-1);
+    let visited = Array(v).fill(false);
+    let ans = new Set();
+    let timer = 0;
+    
+    let treeEdges = []; 
+
+    const snap = (line, msg, node = null, neighbor = null, type = "info", currentChildCount = 0) => ({
+        line, msg, type, node, neighbor, currentChildCount,
+        timeState: [...time],
+        lowState: [...low],
+        visitedState: [...visited],
+        ansState: Array.from(ans),
+        treeEdges: [...treeEdges],
+        timerState: timer
+    });
+
+    yield snap(4, `Initializing variables. V = ${v}. Loop through all nodes.`);
+
+    for (let start = 0; start < v; start++) {
+        if (!visited[start]) {
+            yield snap(6, `Node ${start} is unvisited. Starting DFS from root ${start}.`, start);
+            yield* dfs(start, -1);
+        }
+    }
+
+    function* dfs(u, parent) {
+        time[u] = low[u] = timer++;
+        visited[u] = true;
+        let child = 0;
+        
+        yield snap(16, `DFS(${u}). time[${u}] = low[${u}] = ${time[u]}.`, u, null, "update", child);
+
+        for (let next of adj[u]) {
+            yield snap(19, `Checking neighbor ${next} of node ${u}.`, u, next, "info", child);
+
+            if (next === parent) {
+                yield snap(20, `Neighbor ${next} is parent. Skipping.`, u, next, "info", child);
+                continue;
+            }
+
+            if (visited[next]) {
+                low[u] = Math.min(low[u], time[next]);
+                yield snap(22, `Back-edge found! Node ${next} already visited. Updating low[${u}] = min(low[${u}], time[${next}]) = ${low[u]}.`, u, next, "update", child);
+            } else {
+                child++;
+                treeEdges.push(`${u}-${next}`);
+                yield snap(25, `Neighbor ${next} is unvisited. Child count for ${u} is now ${child}. Recursing into DFS(${next}).`, u, next, "info", child);
+                
+                yield* dfs(next, u);
+                
+                low[u] = Math.min(low[u], low[next]);
+                yield snap(27, `Backtracked to ${u} from ${next}. Updating low[${u}] = min(low[${u}], low[${next}]) = ${low[u]}.`, u, next, "update", child);
+
+                if (low[next] >= time[u] && parent !== -1) {
+                    ans.add(u);
+                    yield snap(29, `ARTICULATION POINT! low[${next}] (${low[next]}) >= time[${u}] (${time[u]}). Removing ${u} disconnects ${next}.`, u, next, "danger", child);
+                } else if (parent !== -1) {
+                    yield snap(28, `low[${next}] (${low[next]}) < time[${u}] (${time[u]}). Alternative path exists.`, u, next, "info", child);
+                }
+            }
+        }
+        
+        if (parent === -1 && child > 1) {
+            ans.add(u);
+            yield snap(34, `ROOT CONDITION: Node ${u} is the DFS root and has ${child} independent children (>1). It is an Articulation Point!`, u, null, "danger", child);
+        } else if (parent === -1) {
+            yield snap(33, `ROOT CONDITION: Node ${u} has only ${child} child. It is NOT an Articulation Point.`, u, null, "info", child);
+        }
+    }
+    
+    let res = Array.from(ans);
+    if(res.length === 0) res.push(-1);
+    res.sort((a,b)=>a-b);
+    
+    yield snap(11, `DFS complete. Articulation Points: [${res.join(', ')}].`, null, null, "success");
+}
+
+function prepareExecution() {
+    graphData = buildGraphData();
+    nodePositions = calculatePositions(graphData.v);
+    
+    events = [];
+    const g = simulateDFS();
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    
+    document.getElementById("log").innerHTML = "";
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+}
+
+function drawGraph(e) {
+    const svg = document.getElementById("graph");
+    let svgContent = `<defs>
+        <filter id="glow-active" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-neighbor" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-back" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-bridge" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+    </defs>`;
+
+    graphData.edges.forEach(edge => {
+        const p1 = nodePositions[edge[0]];
+        const p2 = nodePositions[edge[1]];
+        
+        let isActive = e.node !== null && e.neighbor !== null && ((edge[0] === e.node && edge[1] === e.neighbor) || (edge[1] === e.node && edge[0] === e.neighbor));
+        let isTreeEdge = e.treeEdges.includes(`${edge[0]}-${edge[1]}`) || e.treeEdges.includes(`${edge[1]}-${edge[0]}`);
+        
+        let cls = "edge-default";
+        if (isTreeEdge) cls = "edge-tree";
+        if (isActive && e.type === "update" && e.msg.includes("Back-edge")) cls = "edge-back";
+        else if (isActive) cls = "edge-active";
+
+        svgContent += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="${cls}"/>`;
+    });
+
+    for(let i = 0; i < graphData.v; i++) {
+        const p = nodePositions[i];
+        let cls = "node-default";
+        if (e.visitedState[i]) cls = "node-visited";
+        if (i === e.neighbor && e.neighbor !== null) cls = "node-neighbor";
+        if (i === e.node && e.node !== null) cls = "node-active";
+        if (e.ansState.includes(i)) cls += " node-ap";
+
+        svgContent += `<g>
+            <circle cx="${p.x}" cy="${p.y}" r="16" class="${cls}"/>
+            <text x="${p.x}" y="${p.y}" fill="white" font-size="13" font-family="Consolas" text-anchor="middle" dominant-baseline="central">${i}</text>
+        </g>`;
+    }
+    
+    svg.innerHTML = svgContent;
+}
+
+function applyEventData(e) {
+    document.getElementById("val-timer").innerText = e.timerState;
+    document.getElementById("val-child").innerText = e.currentChildCount !== undefined ? e.currentChildCount : "-";
+    document.getElementById("val-aps").innerText = e.ansState.length > 0 ? e.ansState.join(', ') : "None";
+
+    const renderArr = (arr, title) => arr.map((val, i) => {
+        let display = val === -1 ? "-" : val;
+        let cls = val === -1 ? "cell-unvisited" : "";
+        if (i === e.node) cls += " cell-node";
+        if (i === e.neighbor && e.neighbor !== null) cls += " cell-neighbor";
+        if (e.type === "update" && (i === e.node || i === e.neighbor)) cls += " cell-updated";
+        return `<div class="array-item"><span class="array-idx">${i}</span><div class="array-cell ${cls}">${display}</div></div>`;
+    }).join('');
+
+    document.getElementById("timeArray").innerHTML = renderArr(e.timeState, "time");
+    document.getElementById("lowArray").innerHTML = renderArr(e.lowState, "low");
+
+    drawGraph(e);
+
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        if (e.type === "danger") log(e.msg, "log-danger");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "success") log(e.msg, "log-success");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1500); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

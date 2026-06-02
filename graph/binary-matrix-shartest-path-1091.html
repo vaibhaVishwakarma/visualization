@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 1091 - Shortest Path Binary Matrix (Lee Algorithm)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --empty: #2d2d2d;
+        --wall: #b71c1c;       /* Red for obstacles */
+        --queued: #2196f3;     /* Blue for queued */
+        --active: #ff9800;     /* Orange for current */
+        --path: #4caf50;       /* Green for final path */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Queue */
+    .queue-container {
+        display: flex; gap: 6px; overflow-x: auto; padding: 5px 0; min-height: 45px;
+    }
+    .queue-item {
+        background: #1e1e1e; color: white; padding: 6px 12px; border-radius: 4px; 
+        font-family: Consolas; font-weight: bold; font-size: 13px; flex-shrink: 0;
+        display: flex; flex-direction: column; align-items: center;
+        border: 1px solid var(--queued); box-shadow: 0 0 5px rgba(33, 150, 243, 0.3); transition: all 0.2s;
+    }
+    .queue-dist { font-size: 11px; opacity: 0.8; color: var(--queued); }
+
+    /* 2D Grid */
+    #grid-visual {
+        display: grid; gap: 5px; justify-content: center; padding: 20px;
+        background: #1e1e1e; border-radius: 6px; border: 1px solid #333;
+    }
+    .grid-cell {
+        width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+        font-size: 18px; border-radius: 6px; font-weight: bold; transition: all 0.3s;
+        border: 2px solid transparent; color: white; background: #252526;
+    }
+    
+    .cell-wall { background: #5c1111 !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.3) 10px, rgba(0,0,0,0.3) 20px) !important; color: transparent; border-color: var(--wall); }
+    .cell-queued { background: rgba(33, 150, 243, 0.2); border-color: var(--queued); }
+    .cell-active { transform: scale(1.15); border: 2px solid var(--active); box-shadow: 0 0 15px rgba(255, 152, 0, 0.6); z-index: 10; background: var(--active) !important; color: white; }
+    .cell-path { background: var(--path) !important; border-color: white; box-shadow: 0 0 15px rgba(76, 175, 80, 0.6); transform: scale(1.1); z-index: 5; color: white;}
+    
+    .start-end-marker { position: absolute; font-size: 10px; padding: 2px 4px; background: rgba(0,0,0,0.8); border-radius: 4px; bottom: 2px; border: 1px solid #555;}
+
+    /* Log & Footer */
+    .log {
+        height: 140px; overflow-y: auto; font-family: Consolas, monospace;
+        font-size: 13px; line-height: 1.5; padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--path); font-weight: bold;}
+    .log-danger { color: var(--wall); font-weight: bold;}
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5;
+        background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--queued);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. Clear Path</option>
+            <option value="tc2">2. Maze with Obstacles</option>
+            <option value="tc3">3. Blocked (No Path)</option>
+            <option value="tc4">4. Start Blocked</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Binary Matrix (0=Clear, 1=Wall):</label>
+        <textarea id="gridInput" rows="1" cols="20">0,0,0&#10;1,1,0&#10;1,1,0</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run BFS</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (LEE ALGORITHM)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Algorithm Analysis</h3>
+            <div class="footer-note">
+                <strong>Name: Lee Algorithm</strong><br>
+                A specific application of BFS used to find the shortest path between a source and destination in a uniform grid or maze.<br><br>
+                <strong>Time Complexity: O(N²)</strong><br>
+                Where N is the side length of the matrix. The algorithm visits each cell in the matrix at most once, performing 8 constant-time checks for neighbors.<br><br>
+                <strong>Space Complexity: O(N²)</strong><br>
+                The `Queue` and the `dist` (visited) array both require O(N²) space in the worst case (e.g., an empty grid where the queue grows very large).
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <h3>Queue State</h3>
+            <div id="queue" class="queue-container"></div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                <h3 style="margin: 0;">2D Grid Visualization</h3>
+                <h3 style="margin: 0; color:var(--active);">Current Dist: <span id="val-dist">0</span></h3>
+            </div>
+            <div id="grid-visual" style="position: relative; flex: 1;"></div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- BFS ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "public int shortestPathBinaryMatrix(int[][] grid) {",
+    "    int n = grid.length;",
+    "    if (grid[0][0] == 1 || grid[n-1][n-1] == 1) return -1;",
+    "",
+    "    int[] rstep = {-1, -1, -1,  0, 0,  1, 1, 1};",
+    "    int[] cstep = {-1,  0,  1, -1, 1, -1, 0, 1};",
+    "",
+    "    Queue<int[]> q = new LinkedList<>();",
+    "    q.offer(new int[]{0, 0, 1}); // {row, col, distance}",
+    "    ",
+    "    int[][] dist = new int[n][n];",
+    "    for(int i = 0; i < n; i++) Arrays.fill(dist[i], Integer.MAX_VALUE);",
+    "    dist[0][0] = 1;",
+    "",
+    "    while (!q.isEmpty()) {",
+    "        int[] it = q.poll();",
+    "        int x = it[0], y = it[1], distance = it[2];",
+    "",
+    "        if (x == n - 1 && y == n - 1) return distance;",
+    "",
+    "        for (int i = 0; i < 8; i++) { // Optimized from nested loop",
+    "            int a = x + rstep[i];",
+    "            int b = y + cstep[i];",
+    "            ",
+    "            if (a >= 0 && b >= 0 && a < n && b < n ",
+    "                && grid[a][b] == 0 && dist[a][b] > distance + 1) {",
+    "                ",
+    "                q.offer(new int[]{a, b, distance + 1});",
+    "                dist[a][b] = distance + 1;",
+    "            }",
+    "        }",
+    "    }",
+    "    return -1;",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: "0,0,0\n1,1,0\n1,1,0",
+    tc2: "0,0,1,0\n1,0,1,0\n0,0,0,0\n0,1,1,0",
+    tc3: "0,0,0\n1,1,1\n0,0,0",
+    tc4: "1,0,0\n0,0,0\n0,0,0"
+};
+
+let events = [], ptr = 0, timer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        const el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    document.getElementById("gridInput").value = TEST_CASES[document.getElementById("testCases").value];
+}
+
+function parseGrid() {
+    return document.getElementById("gridInput").value.trim().split("\n")
+            .filter(line => line.trim())
+            .map(line => line.split(",").map(Number));
+}
+
+function* simulateBFS(grid) {
+    let n = grid.length;
+    if (n === 0) return;
+    
+    let q = [];
+    let dist = Array(n).fill(0).map(() => Array(n).fill(Infinity));
+    let parent = Array(n).fill(0).map(() => Array(n).fill(null));
+    let finalPath = [];
+
+    const snap = (line, msg, activeCell = null, targetCell = null, isEnd = false) => ({
+        line, msg, activeCell, targetCell, isEnd,
+        qState: JSON.parse(JSON.stringify(q)),
+        distState: JSON.parse(JSON.stringify(dist)),
+        finalPath: [...finalPath],
+        grid: grid
+    });
+
+    if (grid[0][0] === 1 || grid[n-1][n-1] === 1) {
+        yield snap(2, "Start or Target is blocked! Returning -1.", null, null, true);
+        return;
+    }
+
+    q.push({x: 0, y: 0, d: 1});
+    dist[0][0] = 1;
+    yield snap(8, "Initialized Queue and Distance array. Enqueued Start (0,0).", [0,0]);
+
+    const rstep = [-1, -1, -1,  0, 0,  1, 1, 1];
+    const cstep = [-1,  0,  1, -1, 1, -1, 0, 1];
+
+    while (q.length > 0) {
+        let curr = q.shift();
+        let x = curr.x, y = curr.y, distance = curr.d;
+
+        yield snap(16, `Polled (${x}, ${y}) from Queue. Current distance = ${distance}.`, [x,y]);
+
+        if (x === n - 1 && y === n - 1) {
+            let pathCurr = [x, y];
+            while(pathCurr) {
+                finalPath.push(`${pathCurr[0]},${pathCurr[1]}`);
+                pathCurr = parent[pathCurr[0]][pathCurr[1]];
+            }
+            yield snap(18, `TARGET REACHED! Shortest path length is ${distance}.`, [x,y], null, true);
+            return;
+        }
+
+        yield snap(20, `Checking 8 valid neighbors for (${x}, ${y})...`, [x,y]);
+        
+        let foundAny = false;
+        for (let i = 0; i < 8; i++) {
+            let a = x + rstep[i];
+            let b = y + cstep[i];
+
+            if (a >= 0 && b >= 0 && a < n && b < n && grid[a][b] === 0 && dist[a][b] > distance + 1) {
+                dist[a][b] = distance + 1;
+                parent[a][b] = [x, y];
+                q.push({x: a, y: b, d: distance + 1});
+                foundAny = true;
+                yield snap(27, `Found valid unvisited 0 at (${a}, ${b}). Updating distance to ${distance + 1} and adding to Queue.`, [x,y], [a,b]);
+            }
+        }
+        
+        if(!foundAny) yield snap(14, `No new valid neighbors found. Moving to next in queue.`, [x,y]);
+    }
+
+    yield snap(31, "Queue is empty. Target is unreachable. Returning -1.", null, null, true);
+}
+
+function prepareExecution() {
+    const initGrid = parseGrid();
+    events = [];
+    const g = simulateBFS(initGrid);
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    
+    document.getElementById("log").innerHTML = "";
+    initGridUI(initGrid);
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+}
+
+function initGridUI(grid) {
+    const container = document.getElementById("grid-visual");
+    const n = grid.length;
+    container.style.gridTemplateColumns = `repeat(${n}, 50px)`;
+    
+    let html = "";
+    for(let i=0; i<n; i++) {
+        for(let j=0; j<n; j++) {
+            let inner = grid[i][j] === 1 ? "" : "∞";
+            if(i===0 && j===0) inner += "<div class='start-end-marker'>Start</div>";
+            if(i===n-1 && j===n-1) inner += "<div class='start-end-marker' style='bottom:unset;top:2px;'>End</div>";
+            
+            html += `<div id="cell-${i}-${j}" class="grid-cell ${grid[i][j]===1 ? 'cell-wall' : ''}">${inner}</div>`;
+        }
+    }
+    container.innerHTML = html;
+}
+
+function applyEventData(e) {
+    const n = e.grid.length;
+    for(let i=0; i<n; i++) {
+        for(let j=0; j<n; j++) {
+            const cell = document.getElementById(`cell-${i}-${j}`);
+            if(!cell) continue;
+            
+            cell.className = `grid-cell ${e.grid[i][j] === 1 ? 'cell-wall' : ''}`;
+            
+            if(e.grid[i][j] === 0) {
+                let distVal = e.distState[i][j];
+                let inner = distVal === null || distVal === Infinity ? "∞" : distVal;
+                
+                if(i===0 && j===0) inner += "<div class='start-end-marker'>Start</div>";
+                if(i===n-1 && j===n-1) inner += "<div class='start-end-marker' style='bottom:unset;top:2px;'>End</div>";
+                cell.innerHTML = inner;
+
+                if(distVal !== Infinity) cell.classList.add("cell-queued");
+                if(e.finalPath.includes(`${i},${j}`)) cell.classList.add("cell-path");
+                
+                if(e.activeCell && e.activeCell[0] === i && e.activeCell[1] === j) cell.classList.add("cell-active");
+                if(e.targetCell && e.targetCell[0] === i && e.targetCell[1] === j) {
+                    cell.style.borderColor = "var(--active)";
+                    cell.style.boxShadow = "inset 0 0 10px var(--active)";
+                } else {
+                    cell.style.borderColor = "transparent";
+                    cell.style.boxShadow = "none";
+                }
+            }
+        }
+    }
+
+    let currentDist = e.activeCell ? e.distState[e.activeCell[0]][e.activeCell[1]] : 0;
+    if(e.isEnd && e.finalPath.length === 0) currentDist = -1; 
+    document.getElementById("val-dist").innerText = currentDist;
+
+    document.getElementById("queue").innerHTML = e.qState.map(p => `
+        <div class="queue-item">
+            <span>(${p.x},${p.y})</span>
+            <span class="queue-dist">D:${p.d}</span>
+        </div>
+    `).join('') || `<div style="color:#777; font-style:italic; padding:10px;">Empty</div>`;
+
+    if(e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLastStep = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLastStep) applyEventData(e); 
+        
+        if(e.isEnd && e.finalPath.length > 0) log(e.msg, "log-success");
+        else if(e.isEnd || e.msg.includes("blocked")) log(e.msg, "log-danger");
+        else if(e.targetCell) log(e.msg, "log-success");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr); 
+}
+
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2); 
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    timer = setInterval(nextStep, 1000); 
+}
+
+function pause() { if(timer) clearInterval(timer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

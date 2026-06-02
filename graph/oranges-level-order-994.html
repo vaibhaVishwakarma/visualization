@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 994 - Rotting Oranges Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        /* Domain Specific Colors */
+        --fresh: #4caf50;      /* Green for Fresh Oranges */
+        --rotten: #ff9800;     /* Orange for Rotten Oranges */
+        --empty: #333333;
+        --active: #2196f3;     /* Blue for active traversal */
+        --danger: #f44336;
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 4px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 20px; font-weight: bold; color: var(--rotten); margin-top: 4px; }
+
+    /* Queue */
+    .queue-container { display: flex; gap: 6px; overflow-x: auto; padding: 5px 0; min-height: 40px; }
+    .queue-item {
+        background: #1e1e1e; color: white; padding: 6px 12px; border-radius: 4px; font-family: Consolas; font-size: 13px;
+        flex-shrink: 0; border: 1px solid var(--rotten); display: flex; flex-direction: column; align-items: center; transition: all 0.2s;
+    }
+
+    /* 2D Grid */
+    #grid-visual {
+        display: grid;
+        gap: 10px;
+        justify-content: center;
+        padding: 20px;
+        background: #1e1e1e;
+        border-radius: 6px;
+        border: 1px solid #333;
+    }
+    .grid-cell {
+        width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+        font-size: 24px; border-radius: 8px; font-weight: bold; transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    /* Modern Grid Colors */
+    .cell-0 { background: #1a1a1a; border: 1px solid #333; color: #555; }
+    .cell-1 { background: #2e4a2e; border: 1px solid var(--fresh); color: #8bc34a; }
+    .cell-2 { 
+        background: #5c3600; border: 1px solid var(--rotten); color: var(--rotten); 
+        box-shadow: 0 0 10px rgba(255, 152, 0, 0.3);
+    }
+    
+    .cell-active {
+        transform: scale(1.15);
+        border: 2px solid var(--active);
+        box-shadow: 0 0 15px rgba(33, 150, 243, 0.6);
+        z-index: 10;
+        color: white;
+    }
+    .cell-target {
+        border: 2px dashed var(--active);
+    }
+
+    /* Log */
+    .log {
+        height: 140px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-rot { color: var(--rotten); font-weight: bold; }
+    .log-success { color: var(--fresh); font-weight: bold;}
+    .log-fail { color: var(--danger); font-weight: bold;}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>LeetCode Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. Normal Rotting (Ans: 4)</option>
+            <option value="tc2">2. Unreachable Fresh (Ans: -1)</option>
+            <option value="tc3">3. Already Empty (Ans: 0)</option>
+            <option value="tc4">4. Multiple Initial Rotten</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Grid Input:</label>
+        <textarea id="gridInput" rows="1" cols="20">2,1,1&#10;1,1,0&#10;0,1,1</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run BFS</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (BFS)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <div class="var-container" style="margin-bottom: 0;">
+                <div class="var-box">Minutes <div class="var-value" id="val-minutes">0</div></div>
+                <div class="var-box">Fresh Oranges <div class="var-value" id="val-fresh" style="color:var(--fresh);">0</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <h3>Queue (Rotten Oranges Processed)</h3>
+            <div id="queue" class="queue-container"></div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>2D Grid Visualization</h3>
+            <div id="grid-visual"></div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- ROTTING ORANGES LOGIC ---
+const JAVA_CODE = [
+    "public int orangesRotting(int[][] grid) {",
+    "    int m = grid.length, n = grid[0].length;",
+    "    int[][] visited = grid;",
+    "    Queue<int[]> q = new LinkedList<>();",
+    "    int countFreshOrange = 0;",
+    "    for (int i = 0; i < m; i++) {",
+    "        for (int j = 0; j < n; j++) {",
+    "            if (visited[i][j] == 2) q.offer(new int[]{i, j});",
+    "            if (visited[i][j] == 1) countFreshOrange++;",
+    "        }",
+    "    }",
+    "    if (countFreshOrange == 0) return 0;",
+    "    if (q.isEmpty()) return -1;",
+    "    ",
+    "    int minutes = -1;",
+    "    int[][] dirs = {{1,0},{-1,0},{0,-1},{0,1}};",
+    "    while (!q.isEmpty()) {",
+    "        int size = q.size();",
+    "        while (size-- > 0) {",
+    "            int[] cell = q.poll();",
+    "            for (int[] dir : dirs) {",
+    "                int i = cell[0] + dir[0];",
+    "                int j = cell[1] + dir[1];",
+    "                if (i>=0 && i<m && j>=0 && j<n && visited[i][j]==1) {",
+    "                    visited[i][j] = 2;",
+    "                    countFreshOrange--;",
+    "                    q.offer(new int[]{i, j});",
+    "                }",
+    "            }",
+    "        }",
+    "        minutes++;",
+    "    }",
+    "    return countFreshOrange == 0 ? minutes : -1;",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: "2,1,1\n1,1,0\n0,1,1",
+    tc2: "2,1,1\n0,1,1\n1,0,1",
+    tc3: "0,2\n",
+    tc4: "2,1,0,2\n1,1,1,1\n0,0,0,0"
+};
+
+let events = [], ptr = 0, timer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const val = document.getElementById("testCases").value;
+    document.getElementById("gridInput").value = TEST_CASES[val];
+}
+
+function parseGrid() {
+    const lines = document.getElementById("gridInput").value.trim().split("\n");
+    let grid = [];
+    for(const line of lines) {
+        if(!line.trim()) continue;
+        grid.push(line.split(",").map(Number));
+    }
+    return grid;
+}
+
+function* simulateBFS(originalGrid) {
+    let m = originalGrid.length;
+    if(m === 0) return;
+    let n = originalGrid[0].length;
+    
+    let grid = JSON.parse(JSON.stringify(originalGrid));
+    let q = [];
+    let countFreshOrange = 0;
+    let minutes = 0; 
+
+    const snap = (line, type, msg, activeCell = null, targetCell = null) => ({
+        line, type, msg, activeCell, targetCell,
+        gridState: JSON.stringify(grid),
+        qState: JSON.stringify(q),
+        countFreshOrange,
+        minutes
+    });
+
+    yield snap(5, "INIT", "Scanning grid to find initial rotting oranges and count fresh ones...");
+    
+    for (let i = 0; i < m; i++) {
+        for (let j = 0; j < n; j++) {
+            if (grid[i][j] === 2) {
+                q.push([i, j]);
+                yield snap(7, "SCAN", `Found Rotten (2) at [${i},${j}]. Added to Queue.`, [i,j]);
+            }
+            if (grid[i][j] === 1) {
+                countFreshOrange++;
+                yield snap(8, "SCAN", `Found Fresh (1) at [${i},${j}]. Total Fresh: ${countFreshOrange}`, [i,j]);
+            }
+        }
+    }
+    
+    if (countFreshOrange === 0) {
+        yield snap(11, "END", "No fresh oranges. Return 0.", null, null);
+        return;
+    }
+    if (q.length === 0) {
+        yield snap(12, "END", "No rotten oranges to spread disease. Return -1.", null, null);
+        return;
+    }
+    
+    minutes = -1;
+    yield snap(14, "INIT_VAR", `Setup complete. Initializing minutes = -1`);
+    
+    const dirs = [[1, 0], [-1, 0], [0, -1], [0, 1]];
+    
+    while (q.length > 0) {
+        yield snap(16, "WHILE", "Queue not empty. Starting next level (minute).");
+        let size = q.length;
+        yield snap(17, "SIZE", `Level size = ${size} (number of oranges rotting in this minute)`);
+        
+        while (size-- > 0) {
+            let cell = q.shift();
+            let x = cell[0];
+            let y = cell[1];
+            yield snap(19, "POLL", `Popped [${x},${y}] from Queue. Checking 4 directions.`, [x,y]);
+            
+            for (let dir of dirs) {
+                let i = x + dir[0];
+                let j = y + dir[1];
+                
+                if (i >= 0 && i < m && j >= 0 && j < n) {
+                    if (grid[i][j] === 1) {
+                        yield snap(23, "CHECK", `Checking [${i},${j}]... It's Fresh!`, [x,y], [i,j]);
+                        grid[i][j] = 2;
+                        countFreshOrange--;
+                        q.push([i, j]);
+                        yield snap(26, "ROT", `Orange at [${i},${j}] is now ROTTEN! Added to Queue.`, [x,y], [i,j]);
+                    }
+                }
+            }
+        }
+        minutes++;
+        yield snap(29, "INC_MIN", `Level finished. Minutes passed: ${minutes}`);
+    }
+    
+    if (countFreshOrange === 0) {
+        yield snap(31, "END", `Simulation Complete. All oranges rotted. Return ${minutes}`, null, null);
+    } else {
+        yield snap(31, "END", `Simulation Complete. ${countFreshOrange} fresh oranges unreachable. Return -1`, null, null);
+    }
+}
+
+function prepareExecution() {
+    const initGrid = parseGrid();
+    events = [];
+    
+    const g = simulateBFS(initGrid);
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    
+    document.getElementById("log").innerHTML = "";
+    initGridUI(initGrid);
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+}
+
+function initGridUI(grid) {
+    const container = document.getElementById("grid-visual");
+    const m = grid.length;
+    const n = grid[0].length;
+    container.style.gridTemplateColumns = `repeat(${n}, 60px)`;
+    
+    let html = "";
+    for(let i=0; i<m; i++) {
+        for(let j=0; j<n; j++) {
+            html += `<div id="cell-${i}-${j}" class="grid-cell cell-${grid[i][j]}">${grid[i][j]}</div>`;
+        }
+    }
+    container.innerHTML = html;
+}
+
+function applyEventData(e) {
+    const grid = JSON.parse(e.gridState);
+    for(let i=0; i<grid.length; i++) {
+        for(let j=0; j<grid[0].length; j++) {
+            const cell = document.getElementById(`cell-${i}-${j}`);
+            if(cell) {
+                cell.className = `grid-cell cell-${grid[i][j]}`;
+                cell.innerText = grid[i][j];
+                
+                if(e.activeCell && e.activeCell[0] === i && e.activeCell[1] === j) {
+                    cell.classList.add("cell-active");
+                }
+                if(e.targetCell && e.targetCell[0] === i && e.targetCell[1] === j) {
+                    cell.classList.add("cell-target");
+                }
+            }
+        }
+    }
+
+    document.getElementById("val-minutes").innerText = e.minutes === -1 ? "0 (-1)" : e.minutes;
+    document.getElementById("val-fresh").innerText = e.countFreshOrange;
+
+    const q = JSON.parse(e.qState);
+    let qHtml = q.map(coord => `<div class="queue-item">[${coord[0]},${coord[1]}]</div>`).join('');
+    if(q.length === 0) qHtml = `<div style="color:#777; font-style:italic; padding-top:5px;">Empty</div>`;
+    document.getElementById("queue").innerHTML = qHtml;
+
+    if(e.line !== undefined && e.line !== null) highlight(e.line);
+    
+    if(e.type === "ROT") log(e.msg, "log-rot");
+    else if(e.type === "END" && e.msg.includes("-1")) log(e.msg, "log-fail");
+    else if(e.type === "END") log(e.msg, "log-success");
+    else log(`> ${e.msg}`);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLastStep = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLastStep) {
+            applyEventData(e);
+        } else {
+            if(e.type === "ROT") log(e.msg, "log-rot");
+            else if(e.type === "END" && e.msg.includes("-1")) log(e.msg, "log-fail");
+            else if(e.type === "END") log(e.msg, "log-success");
+            else log(`> ${e.msg}`);
+        }
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) {
+        pause(); return;
+    }
+    jumpToStep(ptr);
+}
+
+function prevStep() {
+    pause();
+    if(ptr <= 1) {
+        jumpToStep(0); return;
+    }
+    jumpToStep(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) {
+        initGridUI(parseGrid());
+        jumpToStep(0);
+    }
+    nextStep(); 
+    timer = setInterval(nextStep, 1100);
+}
+
+function pause() {
+    if(timer) clearInterval(timer);
+}
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

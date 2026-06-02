@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 1334 - Floyd-Warshall Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for success/threshold */
+        --active: #ff9800;     /* Orange for i (source) */
+        --target: #2196f3;     /* Blue for j (destination) */
+        --k-node: #e91e63;     /* Pink for k (intermediate) */
+        --danger: #f44336;     /* Red */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Structures */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 6px 10px; border-radius: 4px; border: 1px solid #444; text-align: center; flex: 1; font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: white; margin-top: 4px; }
+    
+    .var-k { color: var(--k-node); }
+    .var-i { color: var(--active); }
+    .var-j { color: var(--target); }
+
+    /* Matrix */
+    .matrix-wrapper { display: flex; flex-direction: column; align-items: center; padding: 10px; }
+    .matrix-grid { display: grid; gap: 2px; background: #444; border: 1px solid #444; border-radius: 4px; padding: 2px;}
+    .matrix-cell {
+        width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+        background: #1e1e1e; font-weight: bold; font-size: 13px; transition: all 0.2s; color: white; border-radius: 2px;
+    }
+    .matrix-header { background: #252526; color: #888; font-size: 11px; }
+    .cell-inf { color: #666; font-size: 18px; font-weight: normal; }
+    
+    .cell-ik { border: 2px solid var(--active); background: rgba(255, 152, 0, 0.2); }
+    .cell-kj { border: 2px solid var(--target); background: rgba(33, 150, 243, 0.2); }
+    .cell-target { border: 2px dashed white; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+    .cell-updated { background: var(--accent); color: white; transform: scale(1.1); z-index: 10; border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+    /* Graph */
+    svg { background: #1e1e1e; border-radius: 6px; width: 100%; border: 1px solid var(--border); transition: border-color 0.5s;}
+
+    /* Log & Footer */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--k-node); font-weight: bold; }
+    .log-info { color: var(--target); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--k-node);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example 1 (n=4)</option>
+            <option value="tc2">2. LC Example 2 (n=5)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>n:</label><input id="nInput" style="width: 30px;" value="4">
+        <label>Threshold:</label><input id="threshInput" style="width: 30px;" value="4">
+    </div>
+
+    <div class="header-group">
+        <label>Edges (u,v,w):</label><textarea id="edgesInput" rows="1" cols="25">0,1,3&#10;1,2,1&#10;1,3,4&#10;2,3,1</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run Floyd-Warshall</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (FLOYD-WARSHALL)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(N&sup3;)</strong><br>
+                The core logic relies on three nested loops iterating from <code>0</code> to <code>N</code>. Therefore, the time complexity strictly scales cubically with the number of cities. Finding the best city at the end takes an additional O(N&sup2;).<br><br>
+                <strong>Space Complexity: O(N&sup2;)</strong><br>
+                We use an N&times;N distance matrix to store the shortest paths between all pairs of nodes.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel" style="display: flex; gap: 15px;">
+            <div style="flex: 1;">
+                <h3>Current Loop State</h3>
+                <div class="var-container">
+                    <div class="var-box">k (Intermediate)<div class="var-value var-k" id="val-k">-</div></div>
+                    <div class="var-box">i (Source)<div class="var-value var-i" id="val-i">-</div></div>
+                    <div class="var-box">j (Destination)<div class="var-value var-j" id="val-j">-</div></div>
+                </div>
+                <h3>Distance Matrix</h3>
+                <div class="matrix-wrapper"><div id="distMatrix" class="matrix-grid"></div></div>
+            </div>
+            
+            <div style="flex: 1.2; display:flex; flex-direction:column;">
+                <h3>City Graph</h3>
+                <svg id="graph" style="flex: 1; min-height: 200px;">
+                    <defs>
+                        <filter id="glow-k" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="blur" />
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                        <filter id="glow-i" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="blur" />
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                        <filter id="glow-j" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="blur" />
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                        <filter id="glow-accent" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="4" result="blur" />
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+        
+        // Re-render SVG to snap positions dynamically when done dragging
+        if (graphData && graphData.n > 0 && events.length > 0) {
+            initGraphUI(graphData.n, graphData.edges);
+            applyEventData(events[ptr > 0 ? ptr - 1 : 0]);
+        }
+    }
+});
+
+// Watch for resizes to re-center the SVG Graph
+const resizeObserver = new ResizeObserver(() => {
+    if (graphData && graphData.n > 0) {
+        initGraphUI(graphData.n, graphData.edges);
+        if (events.length > 0 && ptr > 0) {
+            applyEventData(events[ptr - 1]);
+        }
+    }
+});
+resizeObserver.observe(document.getElementById('graph'));
+
+// --- ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "public int findTheCity(int n, int[][] edges, int distanceThreshold) {",
+    "    int[][] dist = new int[n][n];",
+    "    int INF = (int)1e9;",
+    "    ",
+    "    for (int i = 0; i < n; i++) {",
+    "        Arrays.fill(dist[i], INF);",
+    "        dist[i][i] = 0;",
+    "    }",
+    "    ",
+    "    for (int[] edge : edges) {",
+    "        dist[edge[0]][edge[1]] = edge[2];",
+    "        dist[edge[1]][edge[0]] = edge[2];",
+    "    }",
+    "    ",
+    "    for (int k = 0; k < n; k++) {",
+    "        for (int i = 0; i < n; i++) {",
+    "            for (int j = 0; j < n; j++) {",
+    "                dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j]);",
+    "            }",
+    "        }",
+    "    }",
+    "    ",
+    "    int minCityCount = Integer.MAX_VALUE;",
+    "    int resultCityId = -1;",
+    "    ",
+    "    for (int i = 0; i < n; i++) {",
+    "        int count = 0;",
+    "        for (int j = 0; j < n; j++) {",
+    "            if (i != j && dist[i][j] <= distanceThreshold) {",
+    "                count++;",
+    "            }",
+    "        }",
+    "        if (count <= minCityCount) {",
+    "            minCityCount = count;",
+    "            resultCityId = i;",
+    "        }",
+    "    }",
+    "    return resultCityId;",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { n: 4, t: 4, e: "0,1,3\n1,2,1\n1,3,4\n2,3,1" },
+    tc2: { n: 5, t: 2, e: "0,1,2\n0,4,8\n1,2,3\n1,4,2\n2,3,1\n3,4,1" }
+};
+
+let events = [], ptr = 0, timer = null;
+let graphData = { n: 0, edges: [] };
+let nodePositions = [];
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("nInput").value = tc.n;
+    document.getElementById("threshInput").value = tc.t;
+    document.getElementById("edgesInput").value = tc.e;
+}
+
+function buildGraphData() {
+    const n = parseInt(document.getElementById("nInput").value);
+    const edges = document.getElementById("edgesInput").value.trim().split("\n")
+        .map(l => l.split(",").map(Number));
+    graphData = {n, edges};
+    return graphData;
+}
+
+function initGraphUI(n, edges) {
+    const svg = document.getElementById("graph");
+    const rect = svg.getBoundingClientRect();
+    const cx = (rect.width / 2) || 200, cy = (rect.height / 2) || 130, rLayout = Math.min(cx, cy) - 30, rNode = 18;
+
+    nodePositions = [];
+    let svgContent = "";
+
+    for(let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n - (Math.PI / 2);
+        nodePositions.push({ x: cx + rLayout * Math.cos(angle), y: cy + rLayout * Math.sin(angle) });
+    }
+
+    edges.forEach(e => {
+        if(e.length === 3) {
+            const p1 = nodePositions[e[0]], p2 = nodePositions[e[1]];
+            const mx = (p1.x + p2.x)/2, my = (p1.y + p2.y)/2;
+            svgContent += `<line id="edge-${e[0]}-${e[1]}" x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#555" stroke-width="2"/>`;
+            svgContent += `<text x="${mx}" y="${my-5}" fill="#aaa" font-size="13" font-family="Consolas" text-anchor="middle" style="text-shadow: 1px 1px 2px black;">${e[2]}</text>`;
+        }
+    });
+
+    for(let i = 0; i < n; i++) {
+        const p = nodePositions[i];
+        svgContent += `<g id="node-group-${i}">
+            <circle id="node${i}" cx="${p.x}" cy="${p.y}" r="${rNode}" fill="#333" stroke="#777" stroke-width="2"/>
+            <text x="${p.x}" y="${p.y}" fill="white" font-size="14" font-family="Consolas" text-anchor="middle" dominant-baseline="central">${i}</text>
+        </g>`;
+    }
+    svg.innerHTML = svgContent;
+}
+
+function* simulateFW() {
+    const {n, edges} = buildGraphData();
+    const t = parseInt(document.getElementById("threshInput").value);
+    
+    let INF = 1e9;
+    let dist = Array(n).fill(0).map(() => Array(n).fill(INF));
+    
+    const snap = (line, msg, vars = {}, mats = {}) => ({
+        line, msg, k: vars.k, i: vars.i, j: vars.j,
+        updateCell: mats.updateCell, ikCell: mats.ikCell, kjCell: mats.kjCell, isEnd: vars.isEnd, bestCity: vars.bestCity,
+        distState: JSON.parse(JSON.stringify(dist))
+    });
+
+    yield snap(4, "Initializing Distance Matrix with Infinity and 0s on diagonal.");
+    for (let i = 0; i < n; i++) dist[i][i] = 0;
+    
+    yield snap(9, "Populating initial edge weights (undirected).");
+    for (const [u, v, w] of edges) {
+        dist[u][v] = w;
+        dist[v][u] = w;
+    }
+
+    yield snap(13, "Entering Floyd-Warshall nested loops (k, i, j).");
+
+    for (let k = 0; k < n; k++) {
+        yield snap(13, `--- New Phase: k = ${k} (Intermediate City) ---`, {k});
+        for (let i = 0; i < n; i++) {
+            if (i === k) continue; 
+            
+            for (let j = 0; j < n; j++) {
+                if (j === k || j === i) continue; 
+                
+                if (dist[i][k] === INF || dist[k][j] === INF) continue; 
+                
+                let current = dist[i][j];
+                let viaK = dist[i][k] + dist[k][j];
+                
+                if (viaK < current) {
+                    yield snap(16, `Checking if path i➔k➔j (${viaK}) < i➔j (${current === INF ? '∞' : current})`, {k, i, j}, {ikCell: [i, k], kjCell: [k, j], updateCell: [i, j]});
+                    dist[i][j] = viaK;
+                    yield snap(16, `Updated dist[${i}][${j}] to ${viaK} via city ${k}.`, {k, i, j}, {ikCell: [i, k], kjCell: [k, j], updateCell: [i, j]});
+                }
+            }
+        }
+    }
+
+    yield snap(21, "Floyd-Warshall complete! Evaluating threshold reachability.");
+    
+    let minCount = Infinity;
+    let bestCity = -1;
+
+    for (let i = 0; i < n; i++) {
+        let count = 0;
+        yield snap(25, `Evaluating City ${i}.`, {i});
+        for (let j = 0; j < n; j++) {
+            if (i !== j && dist[i][j] <= t) count++;
+        }
+        
+        let msg = `City ${i} can reach ${count} cities within threshold ${t}. `;
+        if (count <= minCount) {
+            minCount = count;
+            bestCity = i;
+            msg += `New best! (Ties prefer larger ID)`;
+        } else {
+            msg += `Not better than current best.`;
+        }
+        yield snap(31, msg, {i});
+    }
+
+    yield snap(36, `Complete! Best city is ${bestCity}.`, {isEnd: true, bestCity});
+}
+
+function prepareExecution() {
+    const {n, edges} = buildGraphData();
+    initGraphUI(n, edges);
+    
+    events = [];
+    const g = simulateFW();
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    
+    document.getElementById("log").innerHTML = "";
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+}
+
+function renderMatrix(n, dist, mats) {
+    const grid = document.getElementById("distMatrix");
+    grid.style.gridTemplateColumns = `repeat(${n+1}, 38px)`;
+    
+    let html = `<div class="matrix-cell matrix-header"></div>`;
+    for(let c=0; c<n; c++) html += `<div class="matrix-cell matrix-header">${c}</div>`;
+    
+    for(let r=0; r<n; r++) {
+        html += `<div class="matrix-cell matrix-header">${r}</div>`;
+        for(let c=0; c<n; c++) {
+            let val = dist[r][c];
+            let display = val > 1e8 ? "∞" : val;
+            let cls = val > 1e8 ? "cell-inf" : "";
+            
+            if (mats.ikCell && r === mats.ikCell[0] && c === mats.ikCell[1]) cls += " cell-ik";
+            if (mats.kjCell && r === mats.kjCell[0] && c === mats.kjCell[1]) cls += " cell-kj";
+            if (mats.updateCell && r === mats.updateCell[0] && c === mats.updateCell[1]) cls += " cell-target";
+            if (mats.isUpdate && r === mats.updateCell[0] && c === mats.updateCell[1]) cls += " cell-updated";
+
+            html += `<div class="matrix-cell ${cls}">${display}</div>`;
+        }
+    }
+    grid.innerHTML = html;
+}
+
+function applyEventData(e) {
+    const {n} = buildGraphData();
+    
+    document.getElementById("val-k").innerText = e.k !== undefined ? e.k : "-";
+    document.getElementById("val-i").innerText = e.i !== undefined ? e.i : "-";
+    document.getElementById("val-j").innerText = e.j !== undefined ? e.j : "-";
+
+    const isUpdateEvent = e.msg.includes("Updated");
+    renderMatrix(n, e.distState, {
+        ikCell: e.ikCell, kjCell: e.kjCell, updateCell: e.updateCell, isUpdate: isUpdateEvent
+    });
+
+    for(let x=0; x<n; x++) {
+        const node = document.getElementById(`node${x}`);
+        if(!node) continue;
+        node.setAttribute("stroke", "#777");
+        node.setAttribute("fill", "#333");
+        node.removeAttribute("filter");
+        
+        if (e.isEnd && x === e.bestCity) {
+            node.setAttribute("stroke", "white");
+            node.setAttribute("fill", "var(--accent)");
+            node.setAttribute("filter", "url(#glow-accent)");
+        } else {
+            if (x === e.k) { node.setAttribute("stroke", "white"); node.setAttribute("fill", "var(--k-node)"); node.setAttribute("filter", "url(#glow-k)");}
+            if (x === e.i) { node.setAttribute("stroke", "white"); node.setAttribute("fill", "var(--active)"); node.setAttribute("filter", "url(#glow-i)");}
+            if (x === e.j) { node.setAttribute("stroke", "white"); node.setAttribute("fill", "var(--target)"); node.setAttribute("filter", "url(#glow-j)");}
+        }
+    }
+
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        if(e.msg.includes("Updated")) log(e.msg, "log-update");
+        else if(e.msg.includes("New best")) log(e.msg, "log-info");
+        else if(e.isEnd) log(e.msg, "log-success");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    timer = setInterval(nextStep, 1000);
+}
+function pause() { if(timer) clearInterval(timer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

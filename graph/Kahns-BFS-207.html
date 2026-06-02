@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 207 - Kahn's Algorithm (BFS) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for finished nodes/0 indegree */
+        --active: #ff9800;     /* Orange for active processing */
+        --queue: #2196f3;      /* Blue for queue */
+        --danger: #f44336;     /* Red for cycles */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Structures */
+    .var-container { display: flex; gap: 15px; margin-bottom: 10px; }
+    .var-box {
+        background: #1e1e1e; padding: 10px; border-radius: 6px;
+        border: 1px solid #444; text-align: center; flex: 1; font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 20px; font-weight: bold; color: var(--active); margin-top: 5px; }
+
+    .array-container { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px;}
+    .array-item { display: flex; flex-direction: column; align-items: center; }
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .arrayCell {
+        width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 4px; background: #1e1e1e; font-weight: bold; font-size: 13px;
+        transition: all 0.3s;
+    }
+    .zeroCell { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 0 8px rgba(76,175,80,0.4); }
+    .highlightCell { box-shadow: 0 0 10px var(--active); border-color: var(--active); color: var(--active); }
+
+    .queue-container { display: flex; gap: 6px; overflow-x: auto; min-height: 40px; padding: 5px 0;}
+    .queue-item {
+        background: #1e1e1e; color: white; padding: 6px 12px;
+        border-radius: 4px; font-family: Consolas; font-weight: bold; font-size: 13px; flex-shrink: 0;
+        border: 1px solid var(--queue); box-shadow: 0 0 8px rgba(33, 150, 243, 0.3); transition: all 0.2s;
+    }
+
+    /* Graph */
+    svg { background: #1e1e1e; border-radius: 6px; width: 100%; border: 1px solid var(--border); transition: border-color 0.5s;}
+
+    /* Log & Footer */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace;
+        font-size: 13px; line-height: 1.5; padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-danger { color: var(--danger); font-weight: bold; }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5;
+        background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--queue);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="acyclic">1. Linear Acyclic (4 nodes)</option>
+            <option value="cycle">2. Simple Cycle (3 nodes)</option>
+            <option value="hub">3. Prereq Hub (4 nodes)</option>
+            <option value="forest">4. Disconnected (4 nodes)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Courses:</label><input id="numCourses" style="width: 40px;" value="4">
+        <label>Prereqs [a,b]:</label><textarea id="edges" rows="1" cols="15">1 0&#10;2 1&#10;3 2</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run BFS</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (KAHN'S ALGORITHM)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(V + E)</strong><br>
+                Building the adjacency list takes O(E). Enqueueing initial 0-indegree nodes takes O(V). The BFS while loop processes each node exactly once and iterates over all edges exactly once, adding O(V + E).<br><br>
+                <strong>Space Complexity: O(V + E)</strong><br>
+                The adjacency list requires O(V + E) space. The `indegree` array and Queue both require O(V) space.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel" style="display: flex; gap: 15px;">
+            <div style="flex: 1;">
+                <h3>Indegree Array</h3>
+                <div id="indegree" class="array-container"></div>
+            </div>
+            <div style="flex: 1;">
+                <h3>Variables & Queue</h3>
+                <div class="var-container">
+                    <div class="var-box">Count <div class="var-value" id="val-count">0</div></div>
+                </div>
+                <div id="queue" class="queue-container"></div>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Directed Graph (b → a)</h3>
+            <svg id="graph" style="flex: 1; min-height: 250px;"></svg>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// Watch for resizes to re-center the SVG Graph
+const resizeObserver = new ResizeObserver(() => {
+    if (indegree && indegree.length > 0) {
+        let currentPtr = ptr;
+        initGraphUI(indegree.length);
+        if (events.length > 0 && currentPtr > 0) {
+            applyEventData(events[currentPtr - 1]);
+        }
+    }
+});
+resizeObserver.observe(document.getElementById('graph'));
+
+// --- KAHN'S ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "public boolean canFinish(int numCourses, int[][] prerequisites) {",
+    "    List<List<Integer>> adj = new ArrayList<>();",
+    "    for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());",
+    "    int[] indegree = new int[numCourses];",
+    "    for (int[] pre : prerequisites) {",
+    "        adj.get(pre[1]).add(pre[0]);",
+    "        indegree[pre[0]]++;",
+    "    }",
+    "    Queue<Integer> q = new LinkedList<>();",
+    "    for (int i = 0; i < numCourses; i++)",
+    "        if (indegree[i] == 0) q.add(i);",
+    "",
+    "    int count = 0;",
+    "    while (!q.isEmpty()) {",
+    "        int node = q.poll();",
+    "        count++;",
+    "        for (int next : adj.get(node)) {",
+    "            indegree[next]--;",
+    "            if (indegree[next] == 0) q.add(next);",
+    "        }",
+    "    }",
+    "    return count == numCourses;",
+    "}"
+];
+
+const TEST_CASES = {
+    acyclic: { n: 4, edges: "1 0\n2 1\n3 2" },
+    cycle: { n: 3, edges: "1 0\n2 1\n0 2" },
+    hub: { n: 4, edges: "1 0\n2 0\n3 0" },
+    forest: { n: 4, edges: "1 0\n3 2" }
+};
+
+let adj = [], indegree = [], positions = [], events = [], ptr = 0, timer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("numCourses").value = tc.n;
+    document.getElementById("edges").value = tc.edges;
+}
+
+function buildGraphData() {
+    const n = parseInt(document.getElementById("numCourses").value) || 0;
+    adj = Array.from({length: n}, () => []);
+    indegree = Array(n).fill(0);
+    
+    const lines = document.getElementById("edges").value.trim().split("\n");
+    for(const line of lines) {
+        if(!line.trim()) continue;
+        const [a, b] = line.split(/\s+/).map(Number);
+        if(!isNaN(a) && !isNaN(b)) {
+            adj[b].push(a); // Edge from b -> a
+            indegree[a]++;
+        }
+    }
+}
+
+function initGraphUI(n) {
+    const svg = document.getElementById("graph");
+    const rect = svg.getBoundingClientRect();
+    const cx = (rect.width / 2) || 250, cy = (rect.height / 2) || 160, rLayout = Math.min(cx, cy) - 40, rNode = 20;
+
+    positions = [];
+    let svgContent = `<defs>
+        <filter id="glow-active" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-queue" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-accent" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#888" /></marker>
+        <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--active)" /></marker>
+    </defs>`;
+
+    for(let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n - (Math.PI / 2);
+        positions.push({ x: cx + rLayout * Math.cos(angle), y: cy + rLayout * Math.sin(angle) });
+    }
+
+    for(let u = 0; u < n; u++) {
+        for(const v of adj[u]) {
+            const p1 = positions[u], p2 = positions[v];
+            const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            const startX = p1.x + ((p2.x - p1.x) * rNode) / dist, startY = p1.y + ((p2.y - p1.y) * rNode) / dist;
+            const endX = p2.x - ((p2.x - p1.x) * (rNode + 4)) / dist, endY = p2.y - ((p2.y - p1.y) * (rNode + 4)) / dist;
+            svgContent += `<line id="edge-${u}-${v}" x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>`;
+        }
+    }
+
+    for(let i = 0; i < n; i++) {
+        const p = positions[i];
+        svgContent += `<g id="node-group-${i}"><circle id="node${i}" cx="${p.x}" cy="${p.y}" r="${rNode}" fill="#333" stroke="#777" stroke-width="2"/><text x="${p.x}" y="${p.y}" fill="white" font-size="14" font-family="Consolas" text-anchor="middle" dominant-baseline="central">${i}</text></g>`;
+    }
+    svg.innerHTML = svgContent;
+}
+
+function* simulateKahn() {
+    let q = [];
+    let count = 0;
+    let n = indegree.length;
+    let localIndegree = [...indegree];
+    let nodeColors = Array(n).fill("#333");
+
+    const snap = (line, msg, activeEdge = null, targetIdx = null) => ({
+        line, msg, activeEdge, targetIdx,
+        indegreeState: [...localIndegree], qState: [...q], count, colors: [...nodeColors]
+    });
+
+    yield snap(4, "Building Adjacency List and Indegree array...");
+
+    for(let i = 0; i < n; i++) {
+        if(localIndegree[i] === 0) {
+            q.push(i);
+            nodeColors[i] = "var(--queue)";
+            yield snap(10, `Indegree of Node ${i} is 0. Adding to Queue.`);
+        }
+    }
+
+    if(q.length === 0) yield snap(22, "Queue is empty. Graph has no 0-indegree nodes (Cycle exists!).");
+
+    while(q.length > 0) {
+        let node = q.shift();
+        nodeColors[node] = "var(--active)";
+        count++;
+        yield snap(14, `Polled Node ${node}. Increment count to ${count}.`);
+
+        for(let next of adj[node]) {
+            yield snap(16, `Checking neighbor ${next} of Node ${node}.`, [node, next], next);
+            
+            localIndegree[next]--;
+            yield snap(17, `Decremented Indegree of ${next} to ${localIndegree[next]}.`, [node, next], next);
+            
+            if(localIndegree[next] === 0) {
+                q.push(next);
+                nodeColors[next] = "var(--queue)";
+                yield snap(18, `Indegree of ${next} reached 0! Adding to Queue.`, [node, next], next);
+            }
+        }
+        nodeColors[node] = "var(--accent)"; // finished
+        yield snap(13, `Finished processing Node ${node}.`);
+    }
+
+    if(count === n) {
+        yield snap(22, `Count (${count}) == numCourses (${n}). True: All courses can be finished.`, null, null);
+    } else {
+        yield snap(22, `Count (${count}) != numCourses (${n}). False: Cycle detected!`, null, null);
+    }
+}
+
+function prepareExecution() {
+    buildGraphData();
+    initGraphUI(indegree.length);
+    events = [];
+    const g = simulateKahn();
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    document.getElementById("log").innerHTML = "";
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps.`);
+}
+
+function applyEventData(e) {
+    // Render Indegree
+    document.getElementById("indegree").innerHTML = e.indegreeState.map((val, i) => `
+        <div class="array-item">
+            <span class="array-idx">${i}</span>
+            <span class="arrayCell ${val === 0 ? 'zeroCell' : ''} ${e.targetIdx === i ? 'highlightCell' : ''}">${val}</span>
+        </div>
+    `).join('');
+
+    // Render Queue & Variables
+    document.getElementById("queue").innerHTML = e.qState.map(val => `<div class="queue-item">${val}</div>`).join('') || `<div style="color:#777; font-style:italic; padding-top: 5px;">Empty</div>`;
+    document.getElementById("val-count").innerText = e.count;
+
+    // Reset Edges
+    document.querySelectorAll("line").forEach(l => {
+        l.setAttribute("stroke", "#555"); 
+        l.setAttribute("stroke-width", "2"); 
+        l.removeAttribute("filter");
+        l.setAttribute("marker-end", "url(#arrow)");
+    });
+    
+    // Set Active Edge
+    if(e.activeEdge) {
+        const edge = document.getElementById(`edge-${e.activeEdge[0]}-${e.activeEdge[1]}`);
+        if(edge) { 
+            edge.setAttribute("stroke", "var(--active)"); 
+            edge.setAttribute("stroke-width", "3"); 
+            edge.setAttribute("filter", "url(#glow-active)");
+            edge.setAttribute("marker-end", "url(#arrow-active)"); 
+        }
+    }
+
+    // Set Node Colors
+    e.colors.forEach((color, i) => {
+        const node = document.getElementById(`node${i}`);
+        if(node) {
+            node.setAttribute("fill", color);
+            if (color === "var(--active)") node.setAttribute("filter", "url(#glow-active)");
+            else if (color === "var(--queue)") node.setAttribute("filter", "url(#glow-queue)");
+            else if (color === "var(--accent)") node.setAttribute("filter", "url(#glow-accent)");
+            else node.removeAttribute("filter");
+        }
+    });
+
+    highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        if(e.msg.includes("Cycle detected") || e.msg.includes("no 0-indegree")) log(e.msg, "log-danger");
+        else if(e.msg.includes("True:")) log(e.msg, "log-success");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { 
+        if(ptr === events.length) {
+            log("[System] Execution Finished.", "log-success");
+            ptr++; 
+        }
+        pause(); 
+        return; 
+    }
+    jumpToStep(ptr);
+}
+
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) { prepareExecution(); }
+    nextStep(); 
+    timer = setInterval(nextStep, 1000);
+}
+
+function pause() { if(timer) clearInterval(timer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

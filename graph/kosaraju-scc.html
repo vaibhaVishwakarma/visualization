@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kosaraju's Algorithm (SCC) Visualizer</title>
+<!-- Highlight.js for syntax highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #121212;
+        --bg-panel: #1e1e1e;
+        --bg-header: #252526;
+        --text-main: #e0e0e0;
+        --accent: #4caf50;     /* Green */
+        --active: #ff9800;     /* Orange */
+        --stack: #e91e63;      /* Pink */
+        --visited: #9c27b0;    /* Purple */
+        --border: #333;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-panel); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #777; }
+
+    /* Header Controls */
+    .header {
+        padding: 15px 25px; background: var(--bg-header); border-bottom: 1px solid var(--border);
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap;
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-main);
+        padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-panel); color: white; border: 1px solid #555;
+        padding: 6px 12px; border-radius: 4px; font-family: inherit;
+    }
+    button { cursor: pointer; }
+    button:hover { background: #444; }
+    button.primary { background: #2196f3; font-weight: bold; border:none;}
+    button.primary:hover { background: #1976d2; }
+    textarea { resize: none; font-family: Consolas, monospace; }
+
+    /* Main Grid Layout */
+    .main {
+        display: grid; grid-template-columns: 1fr auto 1fr; flex: 1; overflow: hidden;
+    }
+    .left-panel, .right-panel { display: flex; flex-direction: column; overflow-y: auto; }
+    .left-panel { border-right: 1px solid var(--border); background: var(--bg-main); }
+    
+    /* Resizable Divider */
+    .divider {
+        width: 8px; background: var(--border); cursor: col-resize; 
+        transition: background 0.2s; border-left: 1px solid #444; border-right: 1px solid #444;
+        user-select: none; -webkit-user-select: none;
+    }
+    .divider:hover { background: var(--accent); }
+    .divider.active { background: var(--accent); }
+    .panel {
+        margin: 15px; background: var(--bg-panel); border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        word-wrap: break-word; overflow-wrap: break-word;
+    }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 13px; text-transform: uppercase; color: #888; letter-spacing: 1px; }
+
+    /* Expandable Code Block */
+    .code-container {
+        resize: both;           /* Allows user to expand window */
+        overflow: auto;         /* Scrollbars when expanded/shrunk */
+        min-height: 200px;
+        height: 60vh;           /* Default height */
+        max-height: 80vh;
+        background: #1e1e1e;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 0;
+        display: flex;
+    }
+    .code-wrapper {
+        display: flex;
+        width: 100%;
+        flex: 1;
+    }
+    .code-line-numbers {
+        background: #252526;
+        color: #858585;
+        padding: 10px 12px;
+        border-right: 1px solid #3e3e42;
+        user-select: none;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        text-align: right;
+        min-width: 50px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .code-line-number {
+        padding: 0;
+        display: block;
+    }
+    .code-lines {
+        flex: 1;
+        overflow: auto;
+    }
+    .code-lines pre {
+        margin: 0;
+        padding: 10px;
+        background: transparent;
+        border: none;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    .code-lines code {
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        background: transparent;
+        padding: 0;
+    }
+    .hljs {
+        background: transparent !important;
+        color: #d4d4d4;
+    }
+    .hljs-literal, .hljs-number { color: #b5cea8; }
+    .hljs-string { color: #ce9178; }
+    .hljs-attr, .hljs-attribute { color: #9cdcfe; }
+    .hljs-title { color: #dcdcaa; }
+    .hljs-keyword { color: #c586c0; }
+    .hljs-type { color: #4ec9b0; }
+    .codeLine {
+        padding: 2px 8px; white-space: pre-wrap; font-family: Consolas, monospace; font-size: 13px; border-radius: 3px; color: #d4d4d4;
+        word-break: break-word; overflow-wrap: break-word; line-height: 1.5;
+    }
+    .active-line { background: rgba(255, 213, 79, 0.2); border-left: 3px solid #ffd54f; }
+
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px;}
+    .var-box {
+        background: #2d2d2d; padding: 8px 12px; border-radius: 6px; border: 1px solid #555; text-align: center; flex: 1;
+    }
+    .var-value { font-size: 16px; font-weight: bold; color: var(--accent); margin-top: 4px; }
+    
+    .split-panel { display: flex; gap: 15px; margin-bottom: 0; }
+
+    .stack-container { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px;}
+    .stack-item {
+        background: var(--stack); color: white; padding: 5px 10px; border-radius: 4px; font-family: Consolas; font-weight: bold;
+    }
+
+    .array-container { display: flex; gap: 4px; flex-wrap: wrap;}
+    .array-item { display: flex; flex-direction: column; align-items: center; }
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .array-cell {
+        width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 4px; background: #2d2d2d; font-weight: bold; font-size: 13px;
+        transition: all 0.3s;
+    }
+    .cell-visited { background: var(--visited); color: white; border-color: var(--visited); }
+
+    /* Graph */
+    svg { background: #181818; border-radius: 8px; width: 100%; border: 1px solid var(--border); transition: all 0.5s;}
+    .reversed-svg { border-color: var(--active); box-shadow: 0 0 15px rgba(255, 152, 0, 0.2); }
+    
+    .edge-default { stroke: #666; stroke-width: 2; }
+    .edge-active { stroke: var(--active); stroke-width: 4; }
+
+    .node-default { fill: #333; stroke: #777; stroke-width: 2; }
+    .node-visited { fill: #444; stroke: var(--visited); stroke-width: 2; }
+    .node-active { fill: var(--active); stroke: white; stroke-width: 3; }
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #121212; border-radius: 4px; border: 1px solid #333;
+        word-wrap: break-word; overflow-wrap: break-word;
+    }
+    .log-danger { color: #f44336; font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-success { color: var(--accent); font-weight: bold;}
+    .log-stack { color: var(--stack); font-weight: bold;}
+    
+    .footer-note {
+        font-size: 13px; color: #bbb; line-height: 1.5; background: #181818; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+        word-wrap: break-word; overflow-wrap: break-word;
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. User Provided (from main)</option>
+            <option value="tc2">2. Single Large Cycle</option>
+            <option value="tc3">3. Complex (4 SCCs)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>V:</label><input id="vInput" style="width: 30px;" value="5">
+    </div>
+
+    <div class="header-group">
+        <label>Edges (u,v):</label><textarea id="edgesInput" rows="1" cols="25">1,0&#10;0,2&#10;2,1&#10;0,3&#10;3,4</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run Kosaraju</button>
+</div>
+
+<div class="main">
+    <div class="left-panel">
+        <div class="panel" style="display:flex; flex-direction:column; flex:1;">
+            <h3>Java Code (Expandable Panel)</h3>
+            <div id="code" class="code-container"></div>
+        </div>
+
+        <div class="panel">
+            <h3>Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(V + E)</strong><br>
+                The algorithm requires two full Depth-First Searches. Reversing the graph takes O(V + E). DFS processes every vertex and edge exactly once, yielding linear time complexity.<br><br>
+                <strong>Space Complexity: O(V + E)</strong><br>
+                Space is used for the standard adjacency list <code>adj</code>, the transposed adjacency list <code>adjT</code>, the <code>vis</code> array, and the <code>st</code> Stack.
+            </div>
+        </div>
+    </div>
+
+    <div class="divider" id="divider"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #252526; margin-bottom: 0;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Current Phase <div class="var-value" id="val-phase" style="color:white;">-</div></div>
+                <div class="var-box">SCC Count <div class="var-value" id="val-scc" style="color:var(--accent);">0</div></div>
+            </div>
+
+            <div class="split-panel">
+                <div style="flex: 1.5;">
+                    <h3>Stack (st) <span style="font-size:10px; color:#888;">[Top on right]</span></h3>
+                    <div id="stackArray" class="stack-container"></div>
+                </div>
+                <div style="flex: 1;">
+                    <h3>vis[] Array</h3>
+                    <div id="visArray" class="array-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Directed Graph (Arrows flip in Phase 2)</h3>
+            <svg id="graph" height="230"></svg>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const JAVA_CODE = [
+    "class Solution {",
+    "    // Step 1: Perform DFS and store nodes in stack by finishing time",
+    "    private void dfs(int node, int[] vis, List<Integer>[] adj, Stack<Integer> st) {",
+    "        vis[node] = 1;",
+    "        for (int it : adj[node]) {",
+    "            if (vis[it] == 0) {",
+    "                dfs(it, vis, adj, st);",
+    "            }",
+    "        }",
+    "        st.push(node);",
+    "    }",
+    "",
+    "    // Step 2: Perform DFS on transposed graph",
+    "    private void dfs3(int node, int[] vis, List<Integer>[] adjT) {",
+    "        vis[node] = 1;",
+    "        for (int it : adjT[node]) {",
+    "            if (vis[it] == 0) {",
+    "                dfs3(it, vis, adjT);",
+    "            }",
+    "        }",
+    "    }",
+    "",
+    "    // Function to find number of strongly connected components",
+    "    public int kosaraju(int V, List<Integer>[] adj) {",
+    "        int[] vis = new int[V];",
+    "        Stack<Integer> st = new Stack<>();",
+    "",
+    "        // Step 1: Do DFS to fill stack",
+    "        for (int i = 0; i < V; i++) {",
+    "            if (vis[i] == 0) dfs(i, vis, adj, st);",
+    "        }",
+    "",
+    "        // Step 2: Build transpose graph",
+    "        List<Integer>[] adjT = new ArrayList[V];",
+    "        for (int i = 0; i < V; i++) adjT[i] = new ArrayList<>();",
+    "        Arrays.fill(vis, 0);",
+    "",
+    "        for (int i = 0; i < V; i++) {",
+    "            for (int it : adj[i]) {",
+    "                adjT[it].add(i);",
+    "            }",
+    "        }",
+    "",
+    "        // Step 3: Process stack to count SCCs",
+    "        int scc = 0;",
+    "        while (!st.isEmpty()) {",
+    "            int node = st.pop();",
+    "            if (vis[node] == 0) {",
+    "                scc++;",
+    "                dfs3(node, vis, adjT);",
+    "            }",
+    "        }",
+    "        return scc;",
+    "    }",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { v: 5, e: "1,0\n0,2\n2,1\n0,3\n3,4" },
+    tc2: { v: 5, e: "0,1\n1,2\n2,3\n3,4\n4,0" },
+    tc3: { v: 8, e: "0,1\n1,2\n2,0\n2,3\n3,4\n4,5\n5,3\n6,5\n6,7\n7,6" }
+};
+
+// Vibrant colors for different SCCs
+const SCC_COLORS = ["#e91e63", "#2196f3", "#4caf50", "#ff9800", "#9c27b0", "#00bcd4", "#cddc39", "#f44336"];
+
+let events = [], ptr = 0, autoTimer = null;
+let graphData = { v: 0, edges: [], adj: [], adjT: [] };
+let nodePositions = [];
+
+// Render code with Highlight.js and line numbers
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+    
+    // Split highlighted code into lines and wrap each with a container for highlighting
+    let highlightedLines = highlightedCode.split('\n');
+    let wrappedLines = highlightedLines.map((line, i) => 
+        `<div class='code-line' id='line${i}'>${line}</div>`
+    ).join('');
+    
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+
+renderCode();
+
+function highlight(line) {
+    // Remove previous highlight
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    
+    if(line !== null) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("vInput").value = tc.v;
+    document.getElementById("edgesInput").value = tc.e;
+}
+
+function buildGraphData() {
+    const v = parseInt(document.getElementById("vInput").value);
+    let edgesRaw = document.getElementById("edgesInput").value.trim().split("\n")
+        .map(l => l.split(",").map(Number))
+        .filter(e => e.length === 2);
+    
+    let adj = Array.from({length: v}, () => []);
+    let adjT = Array.from({length: v}, () => []);
+    
+    edgesRaw.forEach(e => {
+        adj[e[0]].push(e[1]);
+        adjT[e[1]].push(e[0]);
+    });
+    
+    return {v, edges: edgesRaw, adj, adjT};
+}
+
+function calculatePositions(v) {
+    const svg = document.getElementById("graph");
+    const rect = svg.getBoundingClientRect();
+    const cx = (rect.width / 2) || 200, cy = (rect.height / 2) || 115, rLayout = Math.min(cx, cy) - 25;
+
+    let positions = [];
+    for(let i = 0; i < v; i++) {
+        const angle = (2 * Math.PI * i) / v - (Math.PI / 2);
+        positions.push({ x: cx + rLayout * Math.cos(angle), y: cy + rLayout * Math.sin(angle) });
+    }
+    return positions;
+}
+
+function* simulateKosaraju() {
+    const {v, edges, adj, adjT} = buildGraphData();
+    let vis = Array(v).fill(0);
+    let st = [];
+    let sccCount = 0;
+    let sccMap = {}; 
+
+    const snap = (line, msg, phase, node = null, neighbor = null, type = "info", isReversed = false) => ({
+        line, msg, type, phase, node, neighbor, isReversed,
+        visState: [...vis], stState: [...st], sccCount,
+        sccMap: JSON.parse(JSON.stringify(sccMap))
+    });
+
+    yield snap(26, "Starting Kosaraju's Algorithm.", "1. Forward DFS");
+
+    function* dfs1(u) {
+        vis[u] = 1;
+        yield snap(3, `dfs(${u}): Marked visited[${u}] = 1.`, "1. Forward DFS", u, null, "update");
+        
+        for (let next of adj[u]) {
+            if (vis[next] === 0) {
+                yield snap(6, `dfs(${u}): Found unvisited neighbor ${next}. Recursing...`, "1. Forward DFS", u, next, "info");
+                yield* dfs1(next);
+            } else {
+                yield snap(5, `dfs(${u}): Neighbor ${next} already visited. Skipping.`, "1. Forward DFS", u, next, "info");
+            }
+        }
+        st.push(u);
+        yield snap(9, `dfs(${u}): Finished all edges. Pushing ${u} to stack.`, "1. Forward DFS", u, null, "stack");
+    }
+
+    yield snap(30, "Step 1: Iterate through nodes to fill stack.", "1. Forward DFS");
+    for (let i = 0; i < v; i++) {
+        if (vis[i] === 0) {
+            yield snap(32, `Node ${i} is unvisited. Starting DFS.`, "1. Forward DFS", i);
+            yield* dfs1(i);
+        }
+    }
+
+    yield snap(36, "Step 2: Building Transposed Graph (adjT).", "2. Transpose Graph", null, null, "danger", false);
+    for (let i = 0; i < v; i++) vis[i] = 0;
+    yield snap(41, "Edges reversed. Resetting vis[] array to 0.", "2. Transpose Graph", null, null, "danger", true);
+
+    function* dfs3(u) {
+        vis[u] = 1;
+        sccMap[u] = sccCount;
+        yield snap(14, `dfs3(${u}): Marked visited[${u}] = 1. Added to SCC ${sccCount}.`, "3. Reverse DFS", u, null, "success", true);
+        
+        for (let next of adjT[u]) {
+            if (vis[next] === 0) {
+                yield snap(17, `dfs3(${u}): Found unvisited neighbor ${next}. Recursing...`, "3. Reverse DFS", u, next, "info", true);
+                yield* dfs3(next);
+            }
+        }
+    }
+
+    yield snap(48, "Step 3: Processing stack to count SCCs.", "3. Reverse DFS", null, null, "info", true);
+
+    while (st.length > 0) {
+        let node = st.pop();
+        yield snap(50, `Popped node ${node} from stack.`, "3. Reverse DFS", node, null, "stack", true);
+
+        if (vis[node] === 0) {
+            sccCount++;
+            yield snap(52, `Node ${node} is unvisited. Starting new SCC (Count = ${sccCount}).`, "3. Reverse DFS", node, null, "success", true);
+            yield* dfs3(node);
+        } else {
+            yield snap(51, `Node ${node} already visited. Skipping.`, "3. Reverse DFS", node, null, "info", true);
+        }
+    }
+
+    yield snap(56, `Algorithm Complete! Total Strongly Connected Components: ${sccCount}.`, "Finished", null, null, "success", true);
+}
+
+function prepareExecution() {
+    graphData = buildGraphData();
+    nodePositions = calculatePositions(graphData.v);
+    
+    events = [];
+    const g = simulateKosaraju();
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    
+    document.getElementById("log").innerHTML = "";
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps.`);
+}
+
+function drawGraph(e) {
+    const svg = document.getElementById("graph");
+    if(e.isReversed) svg.classList.add("reversed-svg");
+    else svg.classList.remove("reversed-svg");
+
+    let svgContent = `<defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666" /></marker>
+        <marker id="arrow-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff9800" /></marker>
+    </defs>`;
+
+    graphData.edges.forEach(edge => {
+        let u = edge[0], v = edge[1];
+        if (e.isReversed) { u = edge[1]; v = edge[0]; } // Flip logical direction for render
+
+        const p1 = nodePositions[u];
+        const p2 = nodePositions[v];
+        
+        let isActive = e.node !== null && e.neighbor !== null && ((u === e.node && v === e.neighbor));
+        let cls = isActive ? "edge-active" : "edge-default";
+        let marker = isActive ? "url(#arrow-active)" : "url(#arrow)";
+
+        svgContent += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="${cls}" marker-end="${marker}"/>`;
+    });
+
+    for(let i = 0; i < graphData.v; i++) {
+        const p = nodePositions[i];
+        let cls = "node-default";
+        let fillStyle = "";
+        
+        if (e.visState[i] === 1 && e.phase === "1. Forward DFS") cls = "node-visited";
+        
+        if (e.sccMap[i] !== undefined) {
+            fillStyle = `fill: ${SCC_COLORS[(e.sccMap[i]-1) % SCC_COLORS.length]}; stroke: white; stroke-width: 2px;`;
+        } else if (i === e.node && e.node !== null) {
+            cls = "node-active";
+        }
+
+        svgContent += `<g>
+            <circle cx="${p.x}" cy="${p.y}" r="16" class="${cls}" style="${fillStyle}"/>
+            <text x="${p.x}" y="${p.y}" fill="white" font-size="13" font-family="Consolas" text-anchor="middle" dominant-baseline="central">${i}</text>
+        </g>`;
+    }
+    
+    svg.innerHTML = svgContent;
+}
+
+function applyEventData(e) {
+    document.getElementById("val-phase").innerText = e.phase;
+    document.getElementById("val-scc").innerText = e.sccCount;
+
+    // Arrays
+    document.getElementById("visArray").innerHTML = e.visState.map((val, i) => {
+        let cls = val === 1 ? "cell-visited" : "";
+        if (i === e.node && e.type === "update") cls += " active-line"; // borrow color
+        return `<div class="array-item"><span class="array-idx">${i}</span><div class="array-cell ${cls}">${val}</div></div>`;
+    }).join('');
+
+    // Render Stack (Bottom to Top)
+    document.getElementById("stackArray").innerHTML = e.stState.map(val => 
+        `<div class="stack-item">${val}</div>`
+    ).join('') || `<div style="color:#777; font-size: 13px; font-style:italic;">Empty</div>`;
+
+    // Graph Render
+    drawGraph(e);
+    highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "danger") log(e.msg, "log-danger");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "stack") log(e.msg, "log-stack");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1000); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+// Resizable divider functionality
+function setupDivider() {
+    const divider = document.getElementById('divider');
+    const main = document.querySelector('.main');
+    let isResizing = false;
+
+    divider.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        divider.classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        const mainRect = main.getBoundingClientRect();
+        const newLeftWidth = e.clientX - mainRect.left;
+        const minWidth = 200;
+        const maxWidth = mainRect.width - 200;
+
+        if (newLeftWidth > minWidth && newLeftWidth < maxWidth) {
+            const totalWidth = mainRect.width - 8; // 8px divider
+            const leftPercent = (newLeftWidth / totalWidth) * 100;
+            const rightPercent = ((totalWidth - newLeftWidth) / totalWidth) * 100;
+            
+            main.style.gridTemplateColumns = `${leftPercent}% auto ${rightPercent}%`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            divider.classList.remove('active');
+            document.body.style.cursor = 'default';
+            document.body.style.userSelect = 'auto';
+        }
+    });
+}
+
+window.onload = function() {
+    loadSelectedTest();
+    setupDivider();
+};
+</script>
+</body>
+</html>

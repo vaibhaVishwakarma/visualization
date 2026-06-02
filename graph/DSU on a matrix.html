@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 827 - Making A Large Island (DSU)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --water: #1976d2;      /* Blue for 0s */
+        --land: #4caf50;       /* Green base for 1s */
+        --active: #ff9800;     /* Orange for active processing */
+        --target: #ffeb3b;     /* Yellow for testing 0s */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 20px; font-weight: bold; color: var(--target); margin-top: 4px; }
+    .var-phase { color: var(--active); font-size: 14px; font-weight: bold; margin-top: 6px;}
+
+    /* 2D Grid Visualizer */
+    .grid-wrapper { display: flex; justify-content: center; padding: 10px; }
+    .grid-container {
+        display: grid; gap: 4px; background: #252526; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+    }
+    .grid-cell {
+        width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+        border-radius: 6px; font-weight: bold; font-size: 16px; transition: all 0.3s;
+        border: 2px solid transparent; color: white; position: relative;
+    }
+    
+    .cell-water { background: #1a1a1a; border-color: #333; color: #555;}
+    .cell-testing { background: var(--target) !important; color: black !important; transform: scale(1.1); box-shadow: 0 0 15px rgba(255, 235, 59, 0.6); z-index: 10; border-color: white;}
+    .cell-neighbor { border-color: var(--target); border-width: 3px; box-shadow: inset 0 0 10px rgba(255, 235, 59, 0.4); }
+    .cell-active-union { transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); border-color: white; }
+
+    .size-badge {
+        position: absolute; top: -6px; right: -6px; background: white; color: black;
+        font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Log */
+    .log {
+        height: 140px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--target); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: #4caf50; }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--target);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example (Max 3)</option>
+            <option value="tc2">2. Merge Two Islands (Max 4)</option>
+            <option value="tc3">3. All Water (Max 1)</option>
+            <option value="tc4">4. All Land (Max 4)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Grid (n x n):</label><textarea id="gridInput" rows="1" cols="15">1,0&#10;0,1</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run DSU</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (DSU COMPONENT TRACKING)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(N&sup2;)</strong><br>
+                Where N is the grid dimension. Phase 1 iterates over the grid doing DSU operations (nearly O(1) with path compression and size tracking). Phase 2 iterates over the grid again, checking 4 neighbors for each 0. Overall it scales linearly with the number of cells.<br><br>
+                <strong>Space Complexity: O(N&sup2;)</strong><br>
+                The `parent` and `size` tracking structures (or the Point arrays in the Java code) require memory proportional to the total number of cells in the matrix.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Current Phase <div class="var-phase" id="val-phase">Initializing</div></div>
+                <div class="var-box">Global Max Size <div class="var-value" id="val-max">0</div></div>
+            </div>
+
+            <div class="grid-wrapper">
+                <div id="gridVisual" class="grid-container"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "class Point { int x, y; ... }",
+    "class DisjointSet {",
+    "    Point[][] parent, points;",
+    "    int[][] size;",
+    "    DisjointSet(int n) { ... }",
+    "",
+    "    Point findUPar(Point node) {",
+    "        if (node.equals(parent[node.x][node.y])) return node;",
+    "        return parent[node.x][node.y] = findUPar(parent[node.x][node.y]);",
+    "    }",
+    "",
+    "    void unionBySize(Point u, Point v) {",
+    "        Point ulp_u = findUPar(u), ulp_v = findUPar(v);",
+    "        if (ulp_u.equals(ulp_v)) return;",
+    "        if (size[ulp_u.x][ulp_u.y] < size[ulp_v.x][ulp_v.y]) {",
+    "            parent[ulp_u.x][ulp_u.y] = ulp_v;",
+    "            size[ulp_v.x][ulp_v.y] += size[ulp_u.x][ulp_u.y];",
+    "        } else {",
+    "            parent[ulp_v.x][ulp_v.y] = ulp_u;",
+    "            size[ulp_u.x][ulp_u.y] += size[ulp_v.x][ulp_v.y];",
+    "        }",
+    "    }",
+    "}",
+    "",
+    "public int largestIsland(int[][] grid) {",
+    "    int n = grid.length, mx = 0;",
+    "    DisjointSet dj = new DisjointSet(n);",
+    "    int[] gr = {0,0,1,-1}, gc = {-1,1,0,0};",
+    "    ",
+    "    // Phase 1: Group 1s into islands",
+    "    for(int i = 0; i < n; i++) {",
+    "        for(int j = 0; j < n; j++) {",
+    "            if(grid[i][j] != 1) continue;",
+    "            for(int k = 0; k < 4; k++) {",
+    "                int r = i+gr[k], c = j+gc[k];",
+    "                if(r>=0 && c>=0 && r<n && c<n && grid[r][c]==1)",
+    "                    dj.unionBySize(dj.points[r][c], dj.points[i][j]);",
+    "            }",
+    "        }",
+    "    }",
+    "    ",
+    "    // Phase 2: Test flipping each 0",
+    "    for(int i = 0; i < n; i++) {",
+    "        for(int j = 0; j < n; j++) {",
+    "            if(grid[i][j] == 1) continue;",
+    "            Set<Point> groups = new HashSet<>();",
+    "            for(int k = 0; k < 4; k++) {",
+    "                int r = i+gr[k], c = j+gc[k];",
+    "                if(r>=0 && c>=0 && r<n && c<n && grid[r][c]==1)",
+    "                    groups.add(dj.findUPar(dj.points[r][c]));",
+    "            }",
+    "            int count = 1; // Flipped 0 counts as 1",
+    "            for(Point p : groups) count += dj.size[p.x][p.y];",
+    "            mx = Math.max(mx, count);",
+    "        }",
+    "    }",
+    "    return mx == 0 ? n * n : mx;",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: "1,0\n0,1",
+    tc2: "1,1,0\n0,1,0\n0,0,1",
+    tc3: "0,0\n0,0",
+    tc4: "1,1\n1,1"
+};
+
+let events = [], ptr = 0, timer = null;
+let gridData = [];
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    document.getElementById("gridInput").value = TEST_CASES[document.getElementById("testCases").value];
+}
+
+function parseGrid() {
+    return document.getElementById("gridInput").value.trim().split("\n")
+        .map(l => l.split(",").map(Number));
+}
+
+class VisDSU {
+    constructor(n) {
+        this.parent = Array.from({length: n}, (_, i) => i);
+        this.size = Array(n).fill(1);
+    }
+    find(i) {
+        if (this.parent[i] === i) return i;
+        return this.parent[i] = this.find(this.parent[i]); 
+    }
+    union(i, j) {
+        let rootI = this.find(i);
+        let rootJ = this.find(j);
+        if (rootI === rootJ) return false;
+        
+        if (this.size[rootI] < this.size[rootJ]) {
+            this.parent[rootI] = rootJ;
+            this.size[rootJ] += this.size[rootI];
+        } else {
+            this.parent[rootJ] = rootI;
+            this.size[rootI] += this.size[rootJ];
+        }
+        return true;
+    }
+}
+
+function* simulateIslands() {
+    gridData = parseGrid();
+    let n = gridData.length;
+    let dsu = new VisDSU(n * n);
+    let mx = 0;
+    let hasZero = false;
+
+    const snap = (line, msg, phase, activeCells = [], targetZero = null, neighbors = [], isEnd = false) => ({
+        line, msg, phase, activeCells, targetZero, neighbors, isEnd, mx,
+        parentState: [...dsu.parent],
+        sizeState: [...dsu.size],
+        grid: gridData, n
+    });
+
+    yield snap(29, "Phase 1: Traversing grid to group adjacent 1s.", "1. Build DSU");
+
+    const gr = [0, 0, 1, -1];
+    const gc = [-1, 1, 0, 0];
+
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            if (gridData[i][j] === 0) {
+                hasZero = true;
+                continue;
+            }
+            
+            let id = i * n + j;
+            let unionHappened = false;
+
+            for (let k = 0; k < 4; k++) {
+                let r = i + gr[k];
+                let c = j + gc[k];
+                if (r >= 0 && c >= 0 && r < n && c < n && gridData[r][c] === 1) {
+                    let nid = r * n + c;
+                    if (dsu.union(id, nid)) {
+                        unionHappened = true;
+                        yield snap(36, `Union joined [${i},${j}] and [${r},${c}]! Island size grew.`, "1. Build DSU", [id, nid]);
+                    }
+                }
+            }
+        }
+    }
+
+    for (let i = 0; i < n * n; i++) {
+        if (dsu.parent[i] === i && gridData[Math.floor(i/n)][i%n] === 1) {
+            mx = Math.max(mx, dsu.size[i]);
+        }
+    }
+    yield snap(41, `Phase 1 Complete. Baseline Max Island Size = ${mx}`, "2. Evaluate 0s");
+
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            if (gridData[i][j] === 1) continue;
+            
+            let zeroId = i * n + j;
+            let groups = new Set();
+            let neighborIds = [];
+
+            for (let k = 0; k < 4; k++) {
+                let r = i + gr[k];
+                let c = j + gc[k];
+                if (r >= 0 && c >= 0 && r < n && c < n && gridData[r][c] === 1) {
+                    let root = dsu.find(r * n + c);
+                    groups.add(root);
+                    neighborIds.push(r * n + c);
+                }
+            }
+
+            let potentialSize = 1; 
+            let breakdown = ["1 (self)"];
+            
+            for (let root of groups) {
+                potentialSize += dsu.size[root];
+                breakdown.push(`${dsu.size[root]}`);
+            }
+
+            yield snap(48, `Testing 0 at [${i},${j}]. Adjacent unique islands: ${groups.size}. Sum: ${breakdown.join(' + ')} = ${potentialSize}`, "2. Evaluate 0s", [], zeroId, neighborIds);
+
+            if (potentialSize > mx) {
+                mx = potentialSize;
+                yield snap(52, `New Max Size Found: ${mx}!`, "2. Evaluate 0s", [], zeroId, neighborIds);
+            }
+        }
+    }
+
+    if (!hasZero) mx = n * n; 
+    yield snap(55, `Complete! Maximum possible island size is ${mx}.`, "Finished", [], null, [], true);
+}
+
+function prepareExecution() {
+    gridData = parseGrid();
+    events = [];
+    const g = simulateIslands();
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    
+    document.getElementById("log").innerHTML = "";
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps.`);
+}
+
+function getIslandColor(rootId, n) {
+    const hue = (rootId * 137.5) % 360;
+    return `hsl(${hue}, 70%, 35%)`; 
+}
+
+function applyEventData(e) {
+    document.getElementById("val-phase").innerText = e.phase;
+    document.getElementById("val-max").innerText = e.mx;
+
+    const gridDiv = document.getElementById("gridVisual");
+    gridDiv.style.gridTemplateColumns = `repeat(${e.n}, 50px)`;
+    
+    let html = "";
+    for (let r = 0; r < e.n; r++) {
+        for (let c = 0; c < e.n; c++) {
+            let id = r * e.n + c;
+            let val = e.grid[r][c];
+            
+            let cls = "grid-cell ";
+            let style = "";
+            let inner = val;
+
+            if (val === 0) {
+                cls += "cell-water ";
+                if (e.targetZero === id) {
+                    cls += "cell-testing";
+                    inner = "1"; 
+                }
+            } else {
+                let rootId = e.parentState[id]; 
+                while(rootId !== e.parentState[rootId]) rootId = e.parentState[rootId];
+                
+                style = `background-color: ${getIslandColor(rootId, e.n)};`;
+                
+                if (e.activeCells.includes(id)) cls += "cell-active-union ";
+                if (e.neighbors.includes(id)) cls += "cell-neighbor ";
+                
+                if (rootId === id) {
+                    inner += `<div class="size-badge">${e.sizeState[id]}</div>`;
+                }
+            }
+
+            html += `<div class="${cls}" style="${style}">${inner}</div>`;
+        }
+    }
+    gridDiv.innerHTML = html;
+
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        if (e.msg.includes("New Max")) log(e.msg, "log-success");
+        else if (e.msg.includes("Phase 1 Complete") || e.msg.includes("Complete!")) log(e.msg, "log-success");
+        else if (e.msg.includes("Union")) log(e.msg, "log-update");
+        else if (e.msg.includes("Testing 0")) log(e.msg, "log-info");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    timer = setInterval(nextStep, 1000); 
+}
+function pause() { if(timer) clearInterval(timer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>
