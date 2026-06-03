@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 322 - Coin Change (BFS) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for computed/visited/success */
+        --active: #ff9800;     /* Orange for current val */
+        --neighbor: #2196f3;   /* Blue for next val */
+        --danger: #f44336;     /* Red for discarded/out of bounds */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+    
+    .array-container { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 15px;}
+    .array-item { display: flex; flex-direction: column; align-items: center; }
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; font-family: Consolas; }
+    .array-cell {
+        width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 6px; background: #1e1e1e; font-weight: bold; font-size: 14px;
+        transition: all 0.3s; font-family: Consolas; color: #d4d4d4; position: relative;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-unvisited { color: #555; font-weight: normal; }
+    .cell-visited { background: rgba(76, 175, 80, 0.15); border-color: var(--accent); color: var(--accent); }
+    .cell-current { border-color: var(--active); box-shadow: 0 0 8px rgba(255, 152, 0, 0.5); color: var(--active); transform: scale(1.1); z-index: 2;}
+    .cell-next { border-color: var(--neighbor); box-shadow: 0 0 8px rgba(33, 150, 243, 0.5); color: var(--neighbor); }
+    .cell-discard { border-color: var(--danger); color: var(--danger); }
+    .cell-target { background: rgba(76, 175, 80, 0.5); color: white; border-color: white; box-shadow: 0 0 15px rgba(76, 175, 80, 0.8); transform: scale(1.2); z-index: 5;}
+
+    .queue-container { display: flex; gap: 6px; overflow-x: auto; padding: 5px 0; min-height: 40px; }
+    .queue-item {
+        background: #1e1e1e; color: white; padding: 6px 12px; border-radius: 4px; 
+        font-family: Consolas; font-weight: bold; font-size: 13px; flex-shrink: 0;
+        display: flex; flex-direction: column; align-items: center;
+        border: 1px solid var(--neighbor); box-shadow: 0 0 5px rgba(33, 150, 243, 0.3); transition: all 0.2s;
+    }
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: var(--neighbor); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+
+    /* Simple SVG Layer for Arrows */
+    .svg-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
+            <option value="tc1">1. LC Example 1 (Amount=11)</option>
+            <option value="tc2">2. Unreachable (Amount=3)</option>
+            <option value="tc3">3. Zero Amount (Amount=0)</option>
+            <option value="tc4">4. Multiple Coins (Amount=8)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Coins:</label>
+        <input id="coinsInput" type="text" style="width: 120px;" value="1,2,5">
+        <label>Amount:</label>
+        <input id="amountInput" type="number" style="width: 50px;" value="11" min="0" max="25">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run BFS</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (BFS APPROACH)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(S * N)</strong><br>
+                Where S is the amount and N is the number of coin denominations. In the worst case, the BFS explores every amount from 0 to S, and at each amount, it loops through all N coins.<br><br>
+                <strong>Space Complexity: O(S)</strong><br>
+                The `visited` array and the Queue take up space proportional to the target amount `S`.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Steps (Coins Used)<div class="var-value" id="val-steps" style="color:var(--accent);">-</div></div>
+                <div class="var-box">Current Value (val)<div class="var-value" id="val-val" style="color:var(--active);">-</div></div>
+                <div class="var-box">Next Value (next)<div class="var-value" id="val-next" style="color:var(--neighbor);">-</div></div>
+            </div>
+
+            <h3 style="margin-bottom: 5px;">Queue (q)</h3>
+            <div id="queue" class="queue-container"></div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column; position: relative;" id="visualization-panel">
+            <h3 style="margin-bottom: 5px;">Visited Array (Amounts 0 to target)</h3>
+            <div id="visitedArray" class="array-container" style="position: relative;"></div>
+            
+            <svg class="svg-layer" id="svg-layer">
+                <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--neighbor)" />
+                    </marker>
+                </defs>
+            </svg>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+        if (events.length > 0 && ptr > 0) drawArrows(events[ptr - 1]);
+    }
+});
+
+const resizeObserver = new ResizeObserver(() => {
+    if (events.length > 0 && ptr > 0) drawArrows(events[ptr - 1]);
+});
+resizeObserver.observe(document.getElementById('visualization-panel'));
+
+// --- BFS ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "public int coinChange(int[] coins, int amount) {",
+    "    if (amount == 0) return 0;",
+    "",
+    "    boolean[] visited = new boolean[amount + 1];",
+    "    visited[0] = true;",
+    "",
+    "    Queue<Integer> q = new ArrayDeque<>();",
+    "    q.offer(0);",
+    "",
+    "    int steps = 0;",
+    "",
+    "    while (!q.isEmpty()) {",
+    "        steps++;",
+    "",
+    "        int size = q.size();",
+    "        while (size-- > 0) {",
+    "            int val = q.poll();",
+    "",
+    "            for (int coin : coins) {",
+    "                int next = val + coin;",
+    "",
+    "                if (next == amount) {",
+    "                    return steps;",
+    "                }",
+    "",
+    "                if (next > amount || visited[next]) {",
+    "                    continue;",
+    "                }",
+    "",
+    "                visited[next] = true;",
+    "                q.offer(next);",
+    "            }",
+    "        }",
+    "    }",
+    "",
+    "    return -1;",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { c: "1,2,5", a: 11 },
+    tc2: { c: "2", a: 3 },
+    tc3: { c: "1", a: 0 },
+    tc4: { c: "1,4,5", a: 8 }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i+1}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i+1}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("coinsInput").value = tc.c;
+    document.getElementById("amountInput").value = tc.a;
+}
+
+function* simulateBFS() {
+    let coinsStr = document.getElementById("coinsInput").value;
+    let coins = coinsStr.split(',').map(Number).filter(n => !isNaN(n));
+    let amount = parseInt(document.getElementById("amountInput").value);
+
+    if(isNaN(amount) || amount < 0) amount = 0;
+
+    let visited = Array(amount + 1).fill(false);
+    let q = [];
+    let steps = 0;
+
+    const snap = (line, msg, activeVal=null, nextVal=null, type="info", isEnd=false, ans=null) => ({
+        line, msg, type, activeVal, nextVal, steps, isEnd, ans,
+        visitedState: [...visited], qState: [...q], amount, coins
+    });
+
+    yield snap(2, `Evaluating base case: amount == 0.`);
+    if (amount === 0) {
+        yield snap(2, "Amount is 0. Returning 0.", null, null, "success", true, 0);
+        return;
+    }
+
+    visited[0] = true;
+    q.push(0);
+    yield snap(8, "Initialized visited array and queue with 0.", 0);
+
+    while (q.length > 0) {
+        steps++;
+        yield snap(13, `--- Level ${steps} ---`, null, null, "info");
+
+        let size = q.length;
+        yield snap(15, `Current level size: ${size}. Processing all nodes in queue.`, null, null, "info");
+
+        while (size-- > 0) {
+            let val = q.shift();
+            yield snap(17, `Polled ${val} from queue.`, val, null, "info");
+
+            for (let coin of coins) {
+                let next = val + coin;
+                yield snap(20, `Trying coin ${coin}. next = ${val} + ${coin} = ${next}.`, val, next, "info");
+
+                if (next === amount) {
+                    yield snap(23, `TARGET REACHED! next (${next}) == amount (${amount}). Returning steps: ${steps}.`, val, next, "success", true, steps);
+                    return;
+                }
+
+                if (next > amount) {
+                    yield snap(26, `next (${next}) > amount (${amount}). Skipping.`, val, next, "danger");
+                    continue;
+                }
+                
+                if (visited[next]) {
+                    yield snap(26, `next (${next}) is already visited. Skipping.`, val, next, "danger");
+                    continue;
+                }
+
+                visited[next] = true;
+                q.push(next);
+                yield snap(31, `Marked ${next} as visited and added to queue.`, val, next, "update");
+            }
+        }
+    }
+    yield snap(36, "Queue is empty. Target unreachable. Returning -1.", null, null, "danger", true, -1);
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateBFS();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function drawArrows(e) {
+    const svg = document.getElementById("svg-layer");
+    if (!svg) return;
+    
+    let html = `<defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--neighbor)" />
+        </marker>
+        <marker id="arrow-danger" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--danger)" />
+        </marker>
+        <marker id="arrow-success" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)" />
+        </marker>
+    </defs>`;
+    
+    if (e.activeVal !== null && e.nextVal !== null) {
+        const srcEl = document.getElementById(`arr-cell-${e.activeVal}`);
+        const dstEl = document.getElementById(`arr-cell-${e.nextVal}`);
+        
+        if (srcEl) {
+            const containerRect = document.getElementById("visualization-panel").getBoundingClientRect();
+            const srcRect = srcEl.getBoundingClientRect();
+            
+            const startX = srcRect.left + srcRect.width / 2 - containerRect.left;
+            const startY = srcRect.top - containerRect.top;
+            
+            let endX, endY;
+            
+            if (dstEl) {
+                const dstRect = dstEl.getBoundingClientRect();
+                endX = dstRect.left + dstRect.width / 2 - containerRect.left;
+                endY = dstRect.top - containerRect.top;
+            } else {
+                // Out of bounds, point off-screen right
+                endX = startX + 50;
+                endY = startY - 30;
+            }
+            
+            let color = "var(--neighbor)";
+            let marker = "url(#arrow)";
+            if (e.type === "danger") { color = "var(--danger)"; marker = "url(#arrow-danger)"; }
+            if (e.type === "success") { color = "var(--accent)"; marker = "url(#arrow-success)"; }
+            
+            // Draw arc
+            const midX = (startX + endX) / 2;
+            const midY = Math.min(startY, endY) - 30;
+            
+            html += `<path d="M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY - (dstEl ? 0 : 0)}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="4" marker-end="${marker}"/>`;
+        }
+    }
+    
+    svg.innerHTML = html;
+}
+
+function applyEventData(e) {
+    // Variables
+    document.getElementById("val-steps").innerText = e.steps !== null ? e.steps : "-";
+    document.getElementById("val-val").innerText = e.activeVal !== null ? e.activeVal : "-";
+    document.getElementById("val-next").innerText = e.nextVal !== null ? e.nextVal : "-";
+
+    // Arrays
+    const renderArr = () => e.visitedState.map((val, i) => {
+        let cls = val ? "cell-visited" : "cell-unvisited";
+        let display = val ? "T" : "F";
+        
+        if (i === e.activeVal) cls = "cell-current";
+        else if (i === e.nextVal) {
+            if (e.type === "danger") cls = "cell-discard";
+            else if (e.type === "success") cls = "cell-target";
+            else cls = "cell-next";
+        }
+        
+        return `<div class="array-item" id="arr-item-${i}"><span class="array-idx">${i}</span><div class="array-cell ${cls}" id="arr-cell-${i}">${display}</div></div>`;
+    }).join('');
+
+    document.getElementById("visitedArray").innerHTML = renderArr();
+
+    // Queue
+    document.getElementById("queue").innerHTML = e.qState.map(val => `<div class="queue-item">${val}</div>`).join('') || `<div style="color:#777; font-style:italic; padding-top:10px;">Empty</div>`;
+
+    // Arrows
+    drawArrows(e);
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1000); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

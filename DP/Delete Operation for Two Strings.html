@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 583 - Delete Operation for Two Strings</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    
+        --bg-panel: #252526;   
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for matches */
+        --active: #ff9800;     /* Orange for current cell evaluation */
+        --neighbor: #2196f3;   /* Blue for top/left lookups */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 540px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+        border-right: 2px solid #2d2d2d;
+    }
+
+    /* Right Panel (Visualization Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+        border: 1px solid var(--border);
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 12px; line-height: 1.5;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-line-numbers div { height: 19.5px; } 
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 12px; line-height: 1.5; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; height: 19.5px; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb; min-width: 100px;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* 2D DP Table Visuals */
+    .table-scroll { overflow: auto; max-width: 100%; padding-bottom: 5px; }
+    .dp-table { border-collapse: separate; border-spacing: 4px; font-family: Consolas, monospace; margin: 0 auto; }
+    .dp-cell {
+        width: 40px; height: 40px; border-radius: 4px; border: 1px solid #444; background: #1e1e1e;
+        text-align: center; font-weight: bold; font-size: 14px; color: #d4d4d4; transition: all 0.15s;
+    }
+    .dp-header-cell {
+        width: 40px; height: 40px; background: #2d2d2d; font-size: 14px;
+        font-weight: bold; color: #aaa; text-align: center; border-radius: 4px;
+    }
+    
+    /* Cell Mutation Highlights */
+    .cell-eval { border-color: var(--active) !important; box-shadow: 0 0 8px var(--active); color: var(--active); }
+    .cell-lookup { border-color: var(--neighbor) !important; color: var(--neighbor); background: rgba(33, 150, 243, 0.05); }
+    .cell-match { border-color: var(--accent) !important; color: var(--accent); background: rgba(76, 175, 80, 0.1); }
+    .cell-unvisited { opacity: 0.3; }
+
+    /* Action Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-match { color: var(--accent); font-weight: bold; }
+    .log-mismatch { color: var(--neighbor); }
+    .log-final { color: #ffd54f; font-weight: bold; font-size: 14px; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Presets:</label>
+        <select id="testCases" onchange="loadPreset()">
+            <option value="tc1">1. Standard ("sea", "eat") -> Deletions: 2</option>
+            <option value="tc2">2. Full Match ("leetcode", "etco") -> Deletions: 4</option>
+            <option value="tc3">3. No Match ("abc", "def") -> Deletions: 6</option>
+            <option value="tc4">4. One Empty Result ("a", "") -> Deletions: 1</option>
+        </select>
+    </div>
+    <div class="header-group">
+        <label>Word 1 (Rows):</label>
+        <input id="word1Input" type="text" style="width: 110px;" value="sea">
+    </div>
+    <div class="header-group">
+        <label>Word 2 (Cols):</label>
+        <input id="word2Input" type="text" style="width: 110px;" value="eat">
+    </div>
+    <button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">Python Code Trace</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Subproblem Logic & Formula</h3>
+            <div class="footer-note">
+                If <code style="color:var(--accent)">word1[i-1] == word2[j-1]</code>:<br>
+                &nbsp;&nbsp;<strong>dp[i][j] = dp[i-1][j-1] + 1</strong><br>
+                Else:<br>
+                &nbsp;&nbsp;<strong>dp[i][j] = max(dp[i-1][j], dp[i][j-1])</strong><br>
+                <hr style="border-color:#333; margin: 8px 0;">
+                <strong>Final Return Formula:</strong><br>
+                <code style="color:#ffd54f">deletions = (n + m) - (LCS * 2)</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Row Char word1[i-1]<div class="var-value" id="val-i">-</div></div>
+                <div class="var-box">Col Char word2[j-1]<div class="var-value" id="val-j">-</div></div>
+                <div class="var-box">LCS Length dp[i][j]<div class="var-value" id="val-lcs" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <h3>Dynamic Programming Matrix (word1 vs word2)</h3>
+            <div class="table-scroll">
+                <table id="dpMatrixTable" class="dp-table"></table>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Step Analysis Logger</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const PYTHON_CODE = [
+    "class Solution:",
+    "    def minDistance(self, word1: str, word2: str) -> int:",
+    "        n = len(word1)",
+    "        m = len(word2)",
+    "        dp = [[0]*(m+1) for _ in range(n+1)]",
+    "        for i in range(1, n + 1):",
+    "            for j in range(1, m + 1):",
+    "                if(word1[i-1] == word2[j-1]):",
+    "                    dp[i][j] = dp[i-1][j-1] + 1",
+    "                else:",
+    "                    dp[i][j] = max(dp[i-1][j], dp[i][j-1])",
+    "                    ",
+    "        return (n+m) - (dp[n][m]<<1)"
+];
+
+const PRESETS = {
+    tc1: { w1: "sea", w2: "eat" },
+    tc2: { w1: "leetcode", w2: "etco" },
+    tc3: { w1: "abc", w2: "def" },
+    tc4: { w1: "a", w2: "" }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let globalW1 = "", globalW2 = "";
+
+function renderCodeBlock() {
+    let lineNumbers = PYTHON_CODE.map((_, i) => `<div>${i + 1}</div>`).join('');
+    let rawText = PYTHON_CODE.join('\n');
+    let highlighted = hljs.highlight(rawText, { language: 'python' }).value.split('\n');
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs python">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) element.classList.add("active-line");
+}
+
+function loadPreset() {
+    let selection = PRESETS[document.getElementById("testCases").value];
+    document.getElementById("word1Input").value = selection.w1;
+    document.getElementById("word2Input").value = selection.w2;
+    generateSimulation();
+}
+
+function* lcsSimulationEngine(w1, w2) {
+    let n = w1.length;
+    let m = w2.length;
+    
+    let dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+    let cellStates = Array.from({ length: n + 1 }, () => Array(m + 1).fill("unvisited"));
+    
+    for(let i=0; i<=n; i++) cellStates[i][0] = "filled";
+    for(let j=0; j<=m; j++) cellStates[0][j] = "filled";
+
+    yield { line: 4, msg: `Allocated table grid matrix DP of size [${n+1}][${m+1}].`, dp: copy2D(dp), states: copy2D(cellStates), i: 0, j: 0 };
+
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            cellStates[i][j] = "eval";
+            let char1 = w1[i-1];
+            let char2 = w2[j-1];
+
+            if (char1 === char2) {
+                cellStates[i-1][j-1] = "lookup";
+                yield { line: 7, msg: `Match found: word1[${i-1}]='${char1}' == word2[${j-1}]='${char2}'`, dp: copy2D(dp), states: copy2D(cellStates), i, j };
+                
+                dp[i][j] = dp[i-1][j-1] + 1;
+                cellStates[i][j] = "match";
+                cellStates[i-1][j-1] = "filled"; 
+                yield { line: 8, msg: `Diagonal match logic: dp[${i}][${j}] = dp[${i-1}][${j-1}] + 1 = ${dp[i][j]}`, dp: copy2D(dp), states: copy2D(cellStates), i, j, type: "match" };
+            } else {
+                cellStates[i-1][j] = "lookup";
+                cellStates[i][j-1] = "lookup";
+                yield { line: 7, msg: `Mismatch found: word1[${i-1}]='${char1}' != word2[${j-1}]='${char2}'`, dp: copy2D(dp), states: copy2D(cellStates), i, j };
+                
+                dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+                cellStates[i][j] = "filled";
+                cellStates[i-1][j] = "filled";
+                cellStates[i][j-1] = "filled";
+                yield { line: 10, msg: `Mismatch decision choice: max(top:${dp[i-1][j]}, left:${dp[i][j-1]}) = ${dp[i][j]}`, dp: copy2D(dp), states: copy2D(cellStates), i, j, type: "mismatch" };
+            }
+        }
+    }
+
+    let finalLcs = dp[n][m];
+    let minDeletions = (n + m) - (finalLcs * 2);
+    yield { line: 12, msg: `Calculated Final State: (len(word1): ${n} + len(word2): ${m}) - (LCS: ${finalLcs} * 2) = ${minDeletions} total deletions needed.`, dp: copy2D(dp), states: copy2D(cellStates), i: n, j: m, type: "final" };
+}
+
+function copy2D(arr) { return arr.map(row => [...row]); }
+
+function generateSimulation() {
+    globalW1 = document.getElementById("word1Input").value;
+    globalW2 = document.getElementById("word2Input").value;
+    
+    events = [];
+    ptr = 0;
+    pause();
+
+    const builder = lcsSimulationEngine(globalW1, globalW2);
+    let nextResult = builder.next();
+    while(!nextResult.done) {
+        events.push(nextResult.value);
+        nextResult = builder.next();
+    }
+
+    document.getElementById("log").innerHTML = "";
+    applyStepTrace(0);
+}
+
+function buildGridDOM(stateData) {
+    const table = document.getElementById("dpMatrixTable");
+    table.innerHTML = "";
+
+    let headerRow = document.createElement("tr");
+    headerRow.appendChild(createCell("", "dp-header-cell")); 
+    headerRow.appendChild(createCell("Ø", "dp-header-cell"));
+    for(let j = 0; j < globalW2.length; j++) {
+        headerRow.appendChild(createCell(globalW2[j], "dp-header-cell"));
+    }
+    table.appendChild(headerRow);
+
+    for(let i = 0; i <= globalW1.length; i++) {
+        let rowObj = document.createElement("tr");
+        let rHeader = (i === 0) ? "Ø" : globalW1[i-1];
+        rowObj.appendChild(createCell(rHeader, "dp-header-cell"));
+
+        for(let j = 0; j <= globalW2.length; j++) {
+            let itemVal = stateData.dp[i][j];
+            let cellStatus = stateData.states[i][j];
+            let td = createCell(itemVal, "dp-cell");
+
+            if (cellStatus === "eval") td.classList.add("cell-eval");
+            else if (cellStatus === "lookup") td.classList.add("cell-lookup");
+            else if (cellStatus === "match") td.classList.add("cell-match");
+            else if (cellStatus === "unvisited") td.classList.add("cell-unvisited");
+            
+            rowObj.appendChild(td);
+        }
+        table.appendChild(rowObj);
+    }
+}
+
+function createCell(txt, cls) {
+    let td = document.createElement("td");
+    td.className = cls;
+    td.innerText = txt;
+    return td;
+}
+
+function applyStepTrace(targetIdx) {
+    document.getElementById("log").innerHTML = "";
+    let activePtr = 0;
+    
+    while(activePtr <= targetIdx && activePtr < events.length) {
+        let isFinalNode = (activePtr === targetIdx);
+        let ev = events[activePtr++];
+
+        if (isFinalNode) {
+            document.getElementById("val-i").innerText = ev.i > 0 ? `${ev.i} ('${globalW1[ev.i-1]}')` : "-";
+            document.getElementById("val-j").innerText = ev.j > 0 ? `${ev.j} ('${globalW2[ev.j-1]}')` : "-";
+            document.getElementById("val-lcs").innerText = ev.dp[ev.i][ev.j];
+            
+            buildGridDOM(ev);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssLogClass = "";
+        if (ev.type === "match") cssLogClass = "log-match";
+        else if (ev.type === "mismatch") cssLogClass = "log-mismatch";
+        else if (ev.type === "final") cssLogClass = "log-final";
+
+        log(ev.msg, cssLogClass);
+    }
+    ptr = targetIdx + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function nextStep() {
+    if (ptr >= events.length) { pause(); return; }
+    applyStepTrace(ptr);
+}
+
+function prevStep() {
+    pause();
+    if (ptr <= 1) { applyStepTrace(0); return; }
+    applyStepTrace(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) generateSimulation();
+    nextStep();
+    autoTimer = setInterval(nextStep, 400);
+}
+
+function pause() {
+    if(autoTimer) clearInterval(autoTimer);
+}
+
+window.onload = () => {
+    generateSimulation();
+};
+</script>
+</body>
+</html>

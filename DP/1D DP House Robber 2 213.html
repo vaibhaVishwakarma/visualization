@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 213 - House Robber II (1D DP) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for computed/write */
+        --active: #ff9800;     /* Orange for current house i */
+        --neighbor: #2196f3;   /* Blue for prev1, prev2 reads */
+        --danger: #f44336;     /* Red for discarded/excluded */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+    
+    .array-container { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 15px;}
+    .array-item { display: flex; flex-direction: column; align-items: center; }
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; font-family: Consolas; }
+    .array-cell {
+        width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 6px; background: #1e1e1e; font-weight: bold; font-size: 15px;
+        transition: all 0.3s; font-family: Consolas; color: #d4d4d4; position: relative;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-unvisited { color: #555; font-weight: normal; }
+    .cell-read { border-color: var(--neighbor); box-shadow: 0 0 8px rgba(33, 150, 243, 0.5); color: var(--neighbor); }
+    .cell-current { border-color: var(--active); box-shadow: 0 0 8px rgba(255, 152, 0, 0.5); color: var(--active); transform: scale(1.1); z-index: 2;}
+    .cell-discard { border-color: var(--danger); color: var(--danger); opacity: 0.3; background: #2a1111;}
+
+    .var-label { position: absolute; bottom: -20px; font-size: 10px; color: var(--neighbor); white-space: nowrap; }
+
+    /* Graph */
+    svg { background: #1e1e1e; border-radius: 6px; width: 100%; border: 1px solid var(--border); transition: border-color 0.5s; }
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: var(--neighbor); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
+            <option value="tc1">1. LC Example 1 (2,3,2)</option>
+            <option value="tc2">2. LC Example 2 (1,2,3,1)</option>
+            <option value="tc3">3. High Values (1,2,3)</option>
+            <option value="tc4">4. Single House (5)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Nums Array:</label>
+        <input id="numsInput" type="text" style="width: 200px;" value="2,3,2">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (SPACE OPTIMIZED DP)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(N)</strong><br>
+                The algorithm runs the linear house robber routine twice. Each routine iterates through approximately N-1 elements. Total time is linear.<br><br>
+                <strong>Space Complexity: O(1)</strong><br>
+                By using `prev1` and `prev2` to keep track of the max loot from the last two houses, the space is reduced to constant O(1) memory, instead of an O(N) DP array.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">i<div class="var-value" id="val-i" style="color:var(--accent);">-</div></div>
+                <div class="var-box">curr<div class="var-value" id="val-curr" style="color:var(--active);">-</div></div>
+                <div class="var-box">prev1<div class="var-value" id="val-prev1" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">prev2<div class="var-value" id="val-prev2" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">Case 1 Max<div class="var-value" id="val-max1" style="color:var(--accent);">-</div></div>
+                <div class="var-box">Case 2 Max<div class="var-value" id="val-max2" style="color:var(--accent);">-</div></div>
+                <div class="var-box">Final Max<div class="var-value" id="val-final" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">nums[] (House Values) - <span id="lbl-case" style="color:var(--active);">Not Started</span></h3>
+            </div>
+            <div id="numsArray" class="array-container" style="margin-bottom: 30px;"></div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Circular Neighborhood Visualization</h3>
+            <svg id="graph" style="flex: 1; min-height: 180px;"></svg>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+        
+        // Re-render SVG to snap positions dynamically when done dragging
+        if (events.length > 0 && ptr > 0) drawGraph(events[ptr - 1]);
+    }
+});
+
+// Watch for resizes to re-center the SVG Graph
+const resizeObserver = new ResizeObserver(() => {
+    if (events.length > 0 && ptr > 0) drawGraph(events[ptr - 1]);
+});
+resizeObserver.observe(document.getElementById('graph'));
+
+// --- DP ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "class Solution {",
+    "    public int rob(int[] nums) {",
+    "        int n = nums.length;",
+    "",
+    "        if (n == 1) return nums[0];",
+    "",
+    "        return Math.max(",
+    "            robLinear(nums, 0, n - 2), // include first, exclude last",
+    "            robLinear(nums, 1, n - 1)  // exclude first, include last",
+    "        );",
+    "    }",
+    "",
+    "    private int robLinear(int[] nums, int start, int end) {",
+    "        int prev2 = 0;",
+    "        int prev1 = 0;",
+    "",
+    "        for (int i = start; i <= end; i++) {",
+    "            int curr = Math.max(prev1, nums[i] + prev2);",
+    "            prev2 = prev1;",
+    "            prev1 = curr;",
+    "        }",
+    "",
+    "        return prev1;",
+    "    }",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: "2,3,2",
+    tc2: "1,2,3,1",
+    tc3: "1,2,3",
+    tc4: "5"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let currentNums = [];
+let nodePositions = [];
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    document.getElementById("numsInput").value = TEST_CASES[document.getElementById("testCases").value];
+}
+
+function calculatePositions(n) {
+    const svg = document.getElementById("graph");
+    const rect = svg.getBoundingClientRect();
+    const cx = (rect.width / 2) || 200, cy = (rect.height / 2) || 100, rLayout = Math.min(cx, cy) - 25;
+
+    let positions = [];
+    for(let i = 0; i < n; i++) {
+        // Start from top, go clockwise
+        const angle = (2 * Math.PI * i) / n - (Math.PI / 2);
+        positions.push({ x: cx + rLayout * Math.cos(angle), y: cy + rLayout * Math.sin(angle) });
+    }
+    return positions;
+}
+
+function* simulateRob2() {
+    let inputStr = document.getElementById("numsInput").value;
+    let nums = inputStr.split(',').map(Number).filter(n => !isNaN(n));
+    if (nums.length === 0) nums = [0];
+    currentNums = nums;
+    let n = nums.length;
+    
+    let max1 = null;
+    let max2 = null;
+
+    const snap = (line, msg, cNum = null, actIdx = null, p1Idx = null, p2Idx = null, p1V = null, p2V = null, cV = null, m1 = null, m2 = null, fMax = null, type = "info") => ({
+        line, msg, caseNum: cNum, activeIdx: actIdx, prev1Idx: p1Idx, prev2Idx: p2Idx,
+        prev1Val: p1V, prev2Val: p2V, currVal: cV, max1: m1, max2: m2, finalMax: fMax, type, nums: [...nums], n
+    });
+
+    yield snap(2, `n = ${n}.`);
+    if (n === 1) {
+        yield snap(4, `Only 1 house. Max loot is ${nums[0]}.`, null, null, null, null, null, null, null, null, null, nums[0], "success");
+        return;
+    }
+
+    // Case 1
+    yield snap(7, `CASE 1: Rob from index 0 to ${n-2} (Exclude last house).`, 1);
+    let prev2_1 = 0, prev1_1 = 0;
+    yield snap(13, `Initializing prev2 = 0, prev1 = 0`, 1, null, null, null, prev1_1, prev2_1);
+
+    for (let i = 0; i <= n - 2; i++) {
+        let p1Idx = i - 1;
+        let p2Idx = i - 2;
+        yield snap(16, `House i = ${i} (Value: ${nums[i]}). Evaluating...`, 1, i, p1Idx, p2Idx, prev1_1, prev2_1);
+        
+        let curr = Math.max(prev1_1, nums[i] + prev2_1);
+        yield snap(17, `curr = max(${prev1_1}, ${nums[i]} + ${prev2_1}) = ${curr}`, 1, i, p1Idx, p2Idx, prev1_1, prev2_1, curr, null, null, null, "update");
+        
+        prev2_1 = prev1_1;
+        prev1_1 = curr;
+        yield snap(18, `Updated pointers: prev2 = ${prev2_1}, prev1 = ${prev1_1}`, 1, i, i, i-1, prev1_1, prev2_1, curr);
+    }
+    max1 = prev1_1;
+    yield snap(22, `Case 1 finished. Max loot = ${max1}.`, 1, null, null, null, prev1_1, prev2_1, null, max1, null, null, "success");
+
+    // Case 2
+    yield snap(8, `CASE 2: Rob from index 1 to ${n-1} (Exclude first house).`, 2, null, null, null, null, null, null, max1);
+    let prev2_2 = 0, prev1_2 = 0;
+    yield snap(13, `Initializing prev2 = 0, prev1 = 0`, 2, null, null, null, prev1_2, prev2_2, null, max1);
+
+    for (let i = 1; i <= n - 1; i++) {
+        let p1Idx = i - 1;
+        let p2Idx = i - 2;
+        yield snap(16, `House i = ${i} (Value: ${nums[i]}). Evaluating...`, 2, i, p1Idx, p2Idx, prev1_2, prev2_2, null, max1);
+        
+        let curr = Math.max(prev1_2, nums[i] + prev2_2);
+        yield snap(17, `curr = max(${prev1_2}, ${nums[i]} + ${prev2_2}) = ${curr}`, 2, i, p1Idx, p2Idx, prev1_2, prev2_2, curr, max1, null, null, "update");
+        
+        prev2_2 = prev1_2;
+        prev1_2 = curr;
+        yield snap(18, `Updated pointers: prev2 = ${prev2_2}, prev1 = ${prev1_2}`, 2, i, i, i-1, prev1_2, prev2_2, curr, max1);
+    }
+    max2 = prev1_2;
+    yield snap(22, `Case 2 finished. Max loot = ${max2}.`, 2, null, null, null, prev1_2, prev2_2, null, max1, max2, null, "success");
+
+    // Final
+    let finalMax = Math.max(max1, max2);
+    yield snap(6, `Final result: Math.max(Case 1: ${max1}, Case 2: ${max2}) = ${finalMax}`, null, null, null, null, null, null, null, max1, max2, finalMax, "success");
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateRob2();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function drawGraph(e) {
+    const svg = document.getElementById("graph");
+    if (!svg) return;
+    
+    nodePositions = calculatePositions(e.n);
+    let html = "";
+    
+    const rNode = 18;
+
+    // Draw Edges (Circle connecting all nodes)
+    for(let i = 0; i < e.n; i++) {
+        let next = (i + 1) % e.n;
+        const p1 = nodePositions[i], p2 = nodePositions[next];
+        
+        let color = "#555";
+        let dash = "none";
+        let width = "2";
+        
+        // Emphasize the broken link based on Case
+        if (e.caseNum === 1 && (i === e.n - 1 || next === e.n - 1)) {
+            color = "var(--danger)"; dash = "4"; width = "1";
+        } else if (e.caseNum === 2 && (i === 0 || next === 0)) {
+            color = "var(--danger)"; dash = "4"; width = "1";
+        }
+
+        html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" stroke-dasharray="${dash}"/>`;
+    }
+
+    // Draw Nodes
+    for(let i = 0; i < e.n; i++) {
+        const p = nodePositions[i];
+        let fill = "#2d2d2d";
+        let stroke = "#555";
+        let textColor = "white";
+        let r = rNode;
+
+        if (e.caseNum === 1 && i === e.n - 1) {
+            fill = "#1a0b0b"; stroke = "var(--danger)"; textColor = "#888";
+        } else if (e.caseNum === 2 && i === 0) {
+            fill = "#1a0b0b"; stroke = "var(--danger)"; textColor = "#888";
+        } else {
+            if (i === e.activeIdx) { stroke = "var(--active)"; fill = "rgba(255,152,0,0.2)"; r += 2; }
+            else if (i === e.prev1Idx || i === e.prev2Idx) { stroke = "var(--neighbor)"; fill = "rgba(33,150,243,0.1)"; }
+        }
+
+        html += `<g>
+            <circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+            <text x="${p.x}" y="${p.y}" fill="${textColor}" font-size="14" font-family="Consolas" text-anchor="middle" dominant-baseline="central">${e.nums[i]}</text>
+            <text x="${p.x}" y="${p.y + r + 12}" fill="#888" font-size="10" font-family="Consolas" text-anchor="middle">i:${i}</text>
+        </g>`;
+    }
+    
+    svg.innerHTML = html;
+}
+
+function applyEventData(e) {
+    // Variables
+    document.getElementById("val-i").innerText = e.activeIdx !== null ? e.activeIdx : "-";
+    document.getElementById("val-curr").innerText = e.currVal !== null ? e.currVal : "-";
+    document.getElementById("val-prev1").innerText = e.prev1Val !== null ? e.prev1Val : "-";
+    document.getElementById("val-prev2").innerText = e.prev2Val !== null ? e.prev2Val : "-";
+    
+    document.getElementById("val-max1").innerText = e.max1 !== null ? e.max1 : "-";
+    document.getElementById("val-max2").innerText = e.max2 !== null ? e.max2 : "-";
+    document.getElementById("val-final").innerText = e.finalMax !== null ? e.finalMax : "-";
+
+    let caseLbl = "Not Started";
+    if (e.caseNum === 1) caseLbl = "CASE 1 (Exclude Last)";
+    else if (e.caseNum === 2) caseLbl = "CASE 2 (Exclude First)";
+    else if (e.finalMax !== null) caseLbl = "FINISHED";
+    document.getElementById("lbl-case").innerText = caseLbl;
+
+    // Arrays
+    const renderArr = () => e.nums.map((val, i) => {
+        let cls = "";
+        let lbl = "";
+        
+        if (e.caseNum === 1 && i === e.n - 1) cls = "cell-discard";
+        else if (e.caseNum === 2 && i === 0) cls = "cell-discard";
+        else {
+            if (i === e.activeIdx) cls = "cell-current";
+            else if (i === e.prev1Idx) { cls = "cell-read"; lbl = "prev1"; }
+            else if (i === e.prev2Idx) { cls = "cell-read"; lbl = "prev2"; }
+        }
+        
+        let labelHtml = lbl ? `<div class="var-label">${lbl}</div>` : "";
+        return `<div class="array-item"><span class="array-idx">${i}</span><div class="array-cell ${cls}">${val}${labelHtml}</div></div>`;
+    }).join('');
+
+    document.getElementById("numsArray").innerHTML = renderArr();
+
+    // Graph Render
+    drawGraph(e);
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1500); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

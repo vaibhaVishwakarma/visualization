@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 62 - Unique Paths (2D DP) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for computed/write */
+        --active: #ff9800;     /* Orange for current cell */
+        --neighbor: #2196f3;   /* Blue for dp[i-1][j], dp[i][j-1] reads */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+    
+    /* 2D Matrix Grid */
+    .matrix-wrapper {
+        display: flex; justify-content: center; align-items: center; padding: 20px;
+    }
+    .matrix-grid {
+        display: grid; gap: 4px; background: #252526; border: 1px solid #444; padding: 8px; border-radius: 8px;
+        position: relative;
+    }
+    .matrix-cell {
+        width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+        background: #1e1e1e; font-weight: bold; font-size: 18px; transition: all 0.3s;
+        color: #d4d4d4; border: 2px solid transparent; border-radius: 4px; position: relative;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-unvisited { color: #555; }
+    .cell-read { border-color: var(--neighbor); box-shadow: inset 0 0 10px rgba(33, 150, 243, 0.4); color: var(--neighbor); z-index: 5; }
+    .cell-write { background: rgba(76, 175, 80, 0.2); border-color: var(--accent); color: var(--accent); transform: scale(1.1); box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); z-index: 10; }
+    .cell-current { border-color: var(--active); box-shadow: 0 0 15px rgba(255, 152, 0, 0.6); color: var(--active); transform: scale(1.15); z-index: 10; }
+    
+    .cell-coord { position: absolute; bottom: 2px; right: 4px; font-size: 9px; color: #666; font-family: Consolas; }
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--neighbor);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
+            <option value="tc1">1. LC Example 1 (m=3, n=7)</option>
+            <option value="tc2">2. LC Example 2 (m=3, n=2)</option>
+            <option value="tc3">3. Square (m=4, n=4)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>m (Rows):</label><input id="mInput" type="number" style="width: 40px;" value="3" min="1" max="10">
+        <label>n (Cols):</label><input id="nInput" type="number" style="width: 40px;" value="7" min="1" max="10">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">C++ CODE (2D DP)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(M &times; N)</strong><br>
+                The algorithm initializes the first row and column, then uses a nested loop to visit every other cell exactly once. Each cell computation is an O(1) addition.<br><br>
+                <strong>Space Complexity: O(M &times; N)</strong><br>
+                We construct a 2D vector `dp` of size M rows and N columns to store the number of paths to every cell. <i>(Note: Space can be optimized to O(N) by only storing the previous row).</i>
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Row i <div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+                <div class="var-box">Col j <div class="var-value" id="val-j" style="color:var(--active);">-</div></div>
+                <div class="var-box">From Above: dp[i-1][j] <div class="var-value" id="val-above" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">From Left: dp[i][j-1] <div class="var-value" id="val-left" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">Total Paths: dp[i][j] <div class="var-value" id="val-total" style="color:var(--accent);">-</div></div>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">dp[][] Matrix State</h3>
+            </div>
+            <div class="matrix-wrapper" style="flex: 1;">
+                <div id="dpMatrix" class="matrix-grid"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- DP ALGORITHM LOGIC ---
+const CPP_CODE = [
+    "class Solution {",
+    "public:",
+    "    int uniquePaths(int m, int n) {",
+    "        vector<vector<int>> dp(m, vector<int>(n, 0));",
+    "",
+    "        for(int i = 0 ; i < m ; i++) dp[i][0] = 1;",
+    "        for(int j = 0 ; j < n ; j++) dp[0][j] = 1;",
+    "",
+    "        for(int i = 1 ; i < m; i++) {",
+    "            for(int j = 1; j < n; j++) {",
+    "                dp[i][j] = dp[i-1][j] + dp[i][j-1];",
+    "            }",
+    "        }",
+    "",
+    "        return dp[m-1][n-1];",
+    "    }",
+    "};"
+];
+
+const TEST_CASES = {
+    tc1: {m: 3, n: 7},
+    tc2: {m: 3, n: 2},
+    tc3: {m: 4, n: 4}
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = CPP_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = CPP_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'cpp' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs cpp">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("mInput").value = tc.m;
+    document.getElementById("nInput").value = tc.n;
+}
+
+function* simulateDP() {
+    let m = parseInt(document.getElementById("mInput").value);
+    let n = parseInt(document.getElementById("nInput").value);
+    
+    if (isNaN(m) || m < 1) m = 1;
+    if (isNaN(n) || n < 1) n = 1;
+    
+    let dp = Array(m).fill(0).map(() => Array(n).fill(0));
+    
+    const snap = (line, msg, i = null, j = null, readRow = null, readCol = null, writeRow = null, writeCol = null, type = "info", isEnd = false) => ({
+        line, msg, type, i, j, readRow, readCol, writeRow, writeCol, isEnd,
+        dpState: JSON.parse(JSON.stringify(dp)), m, n
+    });
+
+    yield snap(3, `Initialized vector<vector<int>> dp of size ${m}x${n} with 0s.`);
+
+    // Init first column
+    yield snap(5, `Initializing first column (j=0) to 1. Paths can only go straight down.`);
+    for (let i = 0; i < m; i++) {
+        dp[i][0] = 1;
+        yield snap(5, `dp[${i}][0] = 1`, i, 0, null, null, i, 0, "update");
+    }
+
+    // Init first row
+    yield snap(6, `Initializing first row (i=0) to 1. Paths can only go straight right.`);
+    for (let j = 0; j < n; j++) {
+        // Skip 0,0 if already set, for visual cleanless
+        if (j === 0) continue; 
+        dp[0][j] = 1;
+        yield snap(6, `dp[0][${j}] = 1`, 0, j, null, null, 0, j, "update");
+    }
+
+    yield snap(8, `Base cases complete. Entering nested loops for interior cells.`);
+
+    // Nested loops
+    for (let i = 1; i < m; i++) {
+        for (let j = 1; j < n; j++) {
+            yield snap(10, `Evaluating cell [${i}][${j}]. Reading values from Above [${i-1}][${j}] and Left [${i}][${j-1}].`, i, j, i-1, j-1, null, null, "info");
+            
+            let above = dp[i-1][j];
+            let left = dp[i][j-1];
+            dp[i][j] = above + left;
+            
+            yield snap(10, `Calculated dp[${i}][${j}] = ${above} + ${left} = ${dp[i][j]}.`, i, j, i-1, j-1, i, j, "success");
+        }
+    }
+
+    yield snap(14, `Loops finished. Returning bottom-right cell: dp[${m-1}][${n-1}] = ${dp[m-1][n-1]}.`, null, null, null, null, m-1, n-1, "success", true);
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateDP();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function applyEventData(e) {
+    // Variables
+    document.getElementById("val-i").innerText = e.i !== null ? e.i : "-";
+    document.getElementById("val-j").innerText = e.j !== null ? e.j : "-";
+    
+    let aboveVal = (e.i !== null && e.j !== null && e.i > 0) ? e.dpState[e.i-1][e.j] : "-";
+    document.getElementById("val-above").innerText = aboveVal;
+    
+    let leftVal = (e.i !== null && e.j !== null && e.j > 0) ? e.dpState[e.i][e.j-1] : "-";
+    document.getElementById("val-left").innerText = leftVal;
+    
+    let totalVal = "-";
+    if (e.writeRow !== null && e.writeCol !== null) totalVal = e.dpState[e.writeRow][e.writeCol];
+    else if (e.isEnd) totalVal = e.dpState[e.m-1][e.n-1];
+    document.getElementById("val-total").innerText = totalVal;
+
+    // Matrix Render
+    const grid = document.getElementById("dpMatrix");
+    grid.style.gridTemplateColumns = `repeat(${e.n}, 50px)`;
+    grid.style.gridTemplateRows = `repeat(${e.m}, 50px)`;
+    
+    let html = "";
+    for(let r = 0; r < e.m; r++) {
+        for(let c = 0; c < e.n; c++) {
+            let val = e.dpState[r][c];
+            let display = val === 0 ? "" : val;
+            let cls = val === 0 ? "cell-unvisited" : "";
+            
+            // Highlight Logic
+            if (r === e.writeRow && c === e.writeCol) {
+                if (e.type === "success" && !e.isEnd) cls += " cell-write";
+                else if (e.type === "update") cls += " cell-write"; // initial column/row setup
+                else if (e.isEnd) cls += " cell-write"; // Final answer
+            } else if (r === e.i && c === e.j) {
+                cls += " cell-current";
+            } else if (e.readRow !== null && e.readCol !== null) {
+                if ((r === e.readRow && c === e.j) || (r === e.i && c === e.readCol)) {
+                    cls += " cell-read";
+                }
+            }
+            
+            html += `<div class="matrix-cell ${cls}">${display}<div class="cell-coord">${r},${c}</div></div>`;
+        }
+    }
+    grid.innerHTML = html;
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1000); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

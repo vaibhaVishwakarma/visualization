@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 44 - Wildcard Matching Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    
+        --bg-panel: #252526;   
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for True matches */
+        --fail: #f44336;       /* Red for False matches */
+        --active: #ff9800;     /* Orange for current cell evaluation */
+        --neighbor: #2196f3;   /* Blue for state lookups */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 550px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+        border-right: 2px solid #2d2d2d;
+    }
+
+    /* Right Panel (Visualization Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+        border: 1px solid var(--border);
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 11px; line-height: 1.45;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-line-numbers div { height: 16px; } 
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 11px; line-height: 1.45; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; height: 16px; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb; min-width: 100px;
+    }
+    .var-value { font-size: 16px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* 2D DP Table Visuals */
+    .table-scroll { overflow: auto; max-width: 100%; padding-bottom: 5px; }
+    .dp-table { border-collapse: separate; border-spacing: 4px; font-family: Consolas, monospace; margin: 0 auto; }
+    .dp-cell {
+        width: 45px; height: 45px; border-radius: 4px; border: 1px solid #444; background: #1e1e1e;
+        text-align: center; font-weight: bold; font-size: 12px; transition: all 0.15s;
+    }
+    .dp-cell.cell-true { color: var(--accent); background: rgba(76, 175, 80, 0.05); }
+    .dp-cell.cell-false { color: var(--fail); opacity: 0.6; }
+    .dp-header-cell {
+        width: 45px; height: 45px; background: #2d2d2d; font-size: 13px;
+        font-weight: bold; color: #aaa; text-align: center; border-radius: 4px;
+    }
+    
+    /* Cell Mutation Highlights */
+    .cell-eval { border-color: var(--active) !important; box-shadow: 0 0 8px var(--active); color: var(--active) !important; opacity: 1 !important; }
+    .cell-lookup { border-color: var(--neighbor) !important; color: var(--neighbor) !important; background: rgba(33, 150, 243, 0.1) !important; opacity: 1 !important; }
+    .cell-unvisited { opacity: 0.15; }
+
+    /* Action Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-true { color: var(--accent); font-weight: bold; }
+    .log-false { color: var(--fail); }
+    .log-final { color: #ffd54f; font-weight: bold; font-size: 14px; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Presets:</label>
+        <select id="testCases" onchange="loadPreset()">
+            <option value="tc1">1. Wildcard Multi Match ("aa", "*") -> True</option>
+            <option value="tc2">2. Single Char Mismatch ("cb", "?a") -> False</option>
+            <option value="tc3">3. Empty vs Star Match ("", "***") -> True</option>
+            <option value="tc4">4. Complex Interleaved ("adceb", "*a*b") -> True</option>
+        </select>
+    </div>
+    <div class="header-group">
+        <label>String s:</label>
+        <input id="sInput" type="text" style="width: 110px;" value="aa">
+    </div>
+    <div class="header-group">
+        <label>Pattern p:</label>
+        <input id="pInput" type="text" style="width: 110px;" value="*">
+    </div>
+    <button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">C++ Reverse DP Trace</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Reverse Mapping Formula</h3>
+            <div class="footer-note">
+                • <strong>If s[i] == p[j] || p[j] == '?'</strong>:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<code>dp[i][j] = dp[i+1][j+1]</code> (Look down-right)<br>
+                • <strong>Else if p[j] == '*'</strong>:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<code>dp[i][j] = dp[i+1][j] || dp[i][j+1]</code> (Look down OR right)
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Pointers (i, j)<div class="var-value" id="val-ptrs">-</div></div>
+                <div class="var-box">Inspecting Characters<div class="var-value" id="val-chars">-</div></div>
+                <div class="var-box">Result state dp[i][j]<div class="var-value" id="val-res">-</div></div>
+            </div>
+
+            <h3>Reverse Bottom-Up Table (s on Rows vs p on Columns)</h3>
+            <div class="table-scroll">
+                <table id="dpMatrixTable" class="dp-table"></table>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Step Analysis Logger</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CPP_CODE = [
+    "bool isMatch(string s, string p) {",
+    "    int n = s.size(), m = p.size();",
+    "    vector<vector<bool>> dp(n+1, vector<bool>(m+1, false));",
+    "    dp[n][m] = true;",
+    "    for(int i = 0 ; i < n ; i++) dp[i][m] = false;",
+    "    for(int j = m-1; j >= 0; j--) dp[n][j] = p[j] == '*' && dp[n][j+1];",
+    "    ",
+    "    for(int i = n-1 ; i >= 0 ; i--){",
+    "        for(int j = m-1; j >= 0 ; j--){",
+    "            if(s[i] == p[j] || p[j] == '?') ",
+    "                dp[i][j] = dp[i+1][j+1];",
+    "            else if(p[j] != '*' && s[i] != p[j]) ",
+    "                dp[i][j] = false;",
+    "            else ",
+    "                dp[i][j] = dp[i+1][j] || dp[i][j+1];",
+    "        }",
+    "    }",
+    "    return dp[0][0];",
+    "}"
+];
+
+const PRESETS = {
+    tc1: { s: "aa", p: "*" },
+    tc2: { s: "cb", p: "?a" },
+    tc3: { s: "", p: "***" },
+    tc4: { s: "adceb", p: "*a*b" }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let globalS = "", globalP = "";
+
+function renderCodeBlock() {
+    let lineNumbers = CPP_CODE.map((_, i) => `<div>${i + 1}</div>`).join('');
+    let rawText = CPP_CODE.join('\n');
+    let highlighted = hljs.highlight(rawText, { language: 'cpp' }).value.split('\n');
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs cpp">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) element.classList.add("active-line");
+}
+
+function loadPreset() {
+    let selection = PRESETS[document.getElementById("testCases").value];
+    document.getElementById("sInput").value = selection.s;
+    document.getElementById("pInput").value = selection.p;
+    generateSimulation();
+}
+
+function* wildcardSimulationEngine(s, p) {
+    let n = s.length;
+    let m = p.length;
+    
+    let dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(false));
+    let cellStates = Array.from({ length: n + 1 }, () => Array(m + 1).fill("unvisited"));
+    
+    // Base Case initialization
+    dp[n][m] = true;
+    cellStates[n][m] = "filled";
+    yield { line: 3, msg: `Base Case: Empty string matching empty pattern is True. dp[${n}][${m}] = true`, dp: copy2D(dp), states: copy2D(cellStates), i: n, j: m };
+
+    for(let i = 0; i < n; i++) {
+        dp[i][m] = false;
+        cellStates[i][m] = "filled";
+    }
+    yield { line: 4, msg: `Base Cases: Non-empty string 's' matching empty pattern 'p' is False.`, dp: copy2D(dp), states: copy2D(cellStates), i: 0, j: m };
+
+    for(let j = m - 1; j >= 0; j--) {
+        cellStates[n][j+1] = "lookup";
+        cellStates[n][j] = "eval";
+        yield { line: 5, msg: `Base Case: Checking if pattern tail prefix can match empty string.`, dp: copy2D(dp), states: copy2D(cellStates), i: n, j };
+        
+        dp[n][j] = (p[j] === '*' && dp[n][j+1]);
+        cellStates[n][j] = "filled";
+        cellStates[n][j+1] = "filled";
+    }
+    yield { line: 5, msg: `Completed processing base case row elements.`, dp: copy2D(dp), states: copy2D(cellStates), i: n, j: 0 };
+
+    // REVERSE NESTED LOOP
+    for (let i = n - 1; i >= 0; i--) {
+        for (let j = m - 1; j >= 0; j--) {
+            cellStates[i][j] = "eval";
+            let charS = s[i];
+            let charP = p[j];
+
+            if (charS === charP || charP === '?') {
+                cellStates[i+1][j+1] = "lookup";
+                yield { line: 9, msg: `Evaluating indices (${i}, ${j}): Char match or '?' token detected ('${charS}' vs '${charP}').`, dp: copy2D(dp), states: copy2D(cellStates), i, j };
+                
+                dp[i][j] = dp[i+1][j+1];
+                cellStates[i][j] = "filled";
+                cellStates[i+1][j+1] = "filled";
+                yield { line: 10, msg: `Copied state from down-right diagonal neighbor: dp[${i+1}][${j+1}] = ${dp[i][j].toString().toUpperCase()}`, dp: copy2D(dp), states: copy2D(cellStates), i, j, res: dp[i][j] };
+            } 
+            else if (charP !== '*' && charS !== charP) {
+                yield { line: 11, msg: `Evaluating indices (${i}, ${j}): Characters mismatch explicitly ('${charS}' vs '${charP}').`, dp: copy2D(dp), states: copy2D(cellStates), i, j };
+                
+                dp[i][j] = false;
+                cellStates[i][j] = "filled";
+                yield { line: 12, msg: `Mismatch resolved to FALSE.`, dp: copy2D(dp), states: copy2D(cellStates), i, j, res: dp[i][j] };
+            } 
+            else {
+                cellStates[i+1][j] = "lookup";
+                cellStates[i][j+1] = "lookup";
+                yield { line: 11, msg: `Evaluating indices (${i}, ${j}): Star '*' wildcard encountered. Can expand or skip text.`, dp: copy2D(dp), states: copy2D(cellStates), i, j };
+                
+                dp[i][j] = (dp[i+1][j] || dp[i][j+1]);
+                cellStates[i][j] = "filled";
+                cellStates[i+1][j] = "filled";
+                cellStates[i][j+1] = "filled";
+                yield { line: 14, msg: `Star split operation: OR between down (consume character: ${dp[i+1][j]}) and right (skip star: ${dp[i][j+1]}) = ${dp[i][j].toString().toUpperCase()}`, dp: copy2D(dp), states: copy2D(cellStates), i, j, res: dp[i][j] };
+            }
+        }
+    }
+
+    yield { line: 16, msg: `Reverse validation cycle complete! Return result from target element dp[0][0]: ${dp[0][0].toString().toUpperCase()}`, dp: copy2D(dp), states: copy2D(cellStates), i: 0, j: 0, res: dp[0][0], type: "final" };
+}
+
+function copy2D(arr) { return arr.map(row => [...row]); }
+
+function generateSimulation() {
+    globalS = document.getElementById("sInput").value;
+    globalP = document.getElementById("pInput").value;
+    
+    events = [];
+    ptr = 0;
+    pause();
+
+    const builder = wildcardSimulationEngine(globalS, globalP);
+    let nextResult = builder.next();
+    while(!nextResult.done) {
+        events.push(nextResult.value);
+        nextResult = builder.next();
+    }
+
+    document.getElementById("log").innerHTML = "";
+    applyStepTrace(0);
+}
+
+function buildGridDOM(stateData) {
+    const table = document.getElementById("dpMatrixTable");
+    table.innerHTML = "";
+
+    let headerRow = document.createElement("tr");
+    headerRow.appendChild(createCell("", "dp-header-cell")); 
+    for(let j = 0; j < globalP.length; j++) {
+        headerRow.appendChild(createCell(globalP[j], "dp-header-cell"));
+    }
+    headerRow.appendChild(createCell("Ø", "dp-header-cell"));
+    table.appendChild(headerRow);
+
+    for(let i = 0; i <= globalS.length; i++) {
+        let rowObj = document.createElement("tr");
+        let rHeader = (i === globalS.length) ? "Ø" : globalS[i];
+        rowObj.appendChild(createCell(rHeader, "dp-header-cell"));
+
+        for(let j = 0; j <= globalP.length; j++) {
+            let itemVal = stateData.dp[i][j] ? "T" : "F";
+            let cellStatus = stateData.states[i][j];
+            let td = createCell(itemVal, "dp-cell");
+
+            if(stateData.dp[i][j]) td.classList.add("cell-true");
+            else td.classList.add("cell-false");
+
+            if (cellStatus === "eval") td.classList.add("cell-eval");
+            else if (cellStatus === "lookup") td.classList.add("cell-lookup");
+            else if (cellStatus === "unvisited") td.classList.add("cell-unvisited");
+            
+            rowObj.appendChild(td);
+        }
+        table.appendChild(rowObj);
+    }
+}
+
+function createCell(txt, cls) {
+    let td = document.createElement("td");
+    td.className = cls;
+    td.innerText = txt;
+    return td;
+}
+
+function applyStepTrace(targetIdx) {
+    document.getElementById("log").innerHTML = "";
+    let activePtr = 0;
+    
+    while(activePtr <= targetIdx && activePtr < events.length) {
+        let isFinalNode = (activePtr === targetIdx);
+        let ev = events[activePtr++];
+
+        if (isFinalNode) {
+            document.getElementById("val-ptrs").innerText = `i: ${ev.i}, j: ${ev.j}`;
+            let char1 = ev.i < globalS.length ? `'${globalS[ev.i]}'` : "Ø";
+            let char2 = ev.j < globalP.length ? `'${globalP[ev.j]}'` : "Ø";
+            document.getElementById("val-chars").innerText = `s[i]: ${char1} vs p[j]: ${char2}`;
+            document.getElementById("val-res").innerText = ev.res !== undefined ? ev.res.toString().toUpperCase() : "-";
+            
+            buildGridDOM(ev);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssLogClass = "";
+        if (ev.res === true) cssLogClass = "log-true";
+        else if (ev.res === false) cssLogClass = "log-false";
+        if (ev.type === "final") cssLogClass = "log-final";
+
+        log(ev.msg, cssLogClass);
+    }
+    ptr = targetIdx + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function nextStep() {
+    if (ptr >= events.length) { pause(); return; }
+    applyStepTrace(ptr);
+}
+
+function prevStep() {
+    pause();
+    if (ptr <= 1) { applyStepTrace(0); return; }
+    applyStepTrace(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) generateSimulation();
+    nextStep();
+    autoTimer = setInterval(nextStep, 450);
+}
+
+function pause() {
+    if(autoTimer) clearInterval(autoTimer);
+}
+
+window.onload = () => {
+    generateSimulation();
+};
+</script>
+</body>
+</html>

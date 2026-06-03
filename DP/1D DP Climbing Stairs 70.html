@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 70 - Climbing Stairs (1D DP) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for computed/write */
+        --active: #ff9800;     /* Orange for current step k */
+        --neighbor: #2196f3;   /* Blue for dp[k-1], dp[k-2] reads */
+        --danger: #f44336;     /* Red */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+    
+    .array-container { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px;}
+    .array-item { display: flex; flex-direction: column; align-items: center; }
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .array-cell {
+        width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 4px; background: #1e1e1e; font-weight: bold; font-size: 14px;
+        transition: all 0.3s;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-unvisited { color: #666; font-weight: normal; }
+    .cell-read { border-color: var(--neighbor); box-shadow: 0 0 8px var(--neighbor); color: var(--neighbor); }
+    .cell-write { background: rgba(76, 175, 80, 0.2); border-color: var(--accent); color: var(--accent); transform: scale(1.1); box-shadow: 0 0 10px var(--accent); }
+    .cell-current { border-color: var(--active); box-shadow: 0 0 8px var(--active); }
+
+    /* Graph */
+    svg { background: #1e1e1e; border-radius: 6px; width: 100%; border: 1px solid var(--border); transition: border-color 0.5s; }
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. n = 5 (Standard)</option>
+            <option value="tc2">2. n = 8 (Long)</option>
+            <option value="tc3">3. n = 3 (Short)</option>
+            <option value="tc4">4. n = 1 (Base Case)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Stairs (n):</label><input id="nInput" type="number" style="width: 50px;" value="5" min="1" max="20">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">C++ CODE (1D DP)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(N)</strong><br>
+                A single loop runs from `k = 3` to `n`. In each iteration, we perform an O(1) addition `dp[k-1] + dp[k-2]` and an O(1) push_back.<br><br>
+                <strong>Space Complexity: O(N)</strong><br>
+                We use an array (vector) `dp` of size `n + 1` to store the number of ways to reach each step. (Can be optimized to O(1) by only keeping the last two variables, but the code explicitly builds the array).
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Current Step (k)<div class="var-value" id="val-k">-</div></div>
+                <div class="var-box">Ways(k-1)<div class="var-value" id="val-dp1" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">Ways(k-2)<div class="var-value" id="val-dp2" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">Ways(k)<div class="var-value" id="val-dpk" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <h3>dp[] Vector State</h3>
+            <div id="dpArray" class="array-container"></div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Staircase Visualization (Ways to Reach)</h3>
+            <svg id="graph" style="flex: 1; min-height: 220px;"></svg>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+        
+        // Re-render SVG to snap positions dynamically when done dragging
+        if (events.length > 0 && ptr > 0) {
+            drawGraph(events[ptr - 1]);
+        }
+    }
+});
+
+// Watch for resizes to re-center the SVG Graph
+const resizeObserver = new ResizeObserver(() => {
+    if (events.length > 0 && ptr > 0) {
+        drawGraph(events[ptr - 1]);
+    }
+});
+resizeObserver.observe(document.getElementById('graph'));
+
+// --- DP ALGORITHM LOGIC ---
+const CPP_CODE = [
+    "class Solution {",
+    "public:",
+    "    vector<int> dp = {0,1,2};",
+    "    int climbStairs(int n) {",
+    "        if(n < 3) return dp[n];",
+    "        for(int k = 3; k <= n; k++) {",
+    "            dp.push_back(-1);",
+    "            dp[k] = dp[k-1] + dp[k-2];",
+    "        }",
+    "        return dp[n];",
+    "    }",
+    "};"
+];
+
+const TEST_CASES = {
+    tc1: 5,
+    tc2: 8,
+    tc3: 3,
+    tc4: 1
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = CPP_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = CPP_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'cpp' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs cpp">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    document.getElementById("nInput").value = TEST_CASES[document.getElementById("testCases").value];
+}
+
+function* simulateDP() {
+    let n = parseInt(document.getElementById("nInput").value);
+    if (isNaN(n) || n < 1) n = 1;
+    
+    // Initial state matching code
+    let dp = [0, 1, 2];
+    
+    const snap = (line, msg, k = null, read1 = null, read2 = null, write = null, type = "info", isEnd = false) => ({
+        line, msg, type, k, read1, read2, write, isEnd,
+        dpState: [...dp], n
+    });
+
+    yield snap(2, `Initialized base vector dp = {0, 1, 2}.`);
+
+    yield snap(4, `Checking if n (${n}) < 3.`);
+    if (n < 3) {
+        yield snap(4, `n is less than 3. Returning dp[${n}] = ${dp[n]}.`, null, null, null, null, "success", true);
+        return;
+    }
+
+    yield snap(5, `n >= 3. Entering for loop.`, 3);
+
+    for (let k = 3; k <= n; k++) {
+        yield snap(5, `Loop iteration: k = ${k}.`, k);
+        
+        dp.push(-1);
+        yield snap(6, `dp.push_back(-1) expanding vector for step ${k}.`, k, null, null, k, "info");
+        
+        yield snap(7, `Reading values: dp[${k}-1] = dp[${k-1}] = ${dp[k-1]} AND dp[${k}-2] = dp[${k-2}] = ${dp[k-2]}.`, k, k-1, k-2, null, "update");
+        
+        dp[k] = dp[k-1] + dp[k-2];
+        yield snap(7, `Calculated dp[${k}] = ${dp[k-1]} + ${dp[k-2]} = ${dp[k]}.`, k, k-1, k-2, k, "success");
+    }
+
+    yield snap(9, `Loop finished. Returning dp[${n}] = ${dp[n]}.`, null, null, null, null, "success", true);
+}
+
+function prepareExecution() {
+    events = [];
+    const g = simulateDP();
+    while(true) {
+        const r = g.next();
+        if(r.done) break;
+        events.push(r.value);
+    }
+    
+    document.getElementById("log").innerHTML = "";
+    jumpToStep(0);
+    log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+}
+
+function drawGraph(e) {
+    const svg = document.getElementById("graph");
+    if (!svg) return;
+    
+    const width = svg.clientWidth || 500;
+    const height = svg.clientHeight || 220;
+    const n = e.n;
+    
+    const paddingX = 40;
+    const paddingY = 40;
+    
+    const stepW = (width - paddingX * 2) / Math.max(n, 3);
+    const stepH = (height - paddingY * 2) / Math.max(n, 3);
+    
+    let html = `<defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--active)" />
+        </marker>
+    </defs>`;
+    
+    // Draw stairs
+    let pathD = `M ${paddingX} ${height - paddingY} `;
+    let currX = paddingX;
+    let currY = height - paddingY;
+    
+    for(let i = 1; i <= n; i++) {
+        // Riser
+        currY -= stepH;
+        pathD += `L ${currX} ${currY} `;
+        
+        // Tread
+        currX += stepW;
+        pathD += `L ${currX} ${currY} `;
+        
+        // Draw step number
+        let color = "#888";
+        let weight = "normal";
+        if(i === e.k && e.write === i) { color = "var(--accent)"; weight = "bold"; }
+        else if(i === e.k) { color = "var(--active)"; weight = "bold"; }
+        else if(i === e.read1 || i === e.read2) { color = "var(--neighbor)"; weight = "bold"; }
+        
+        html += `<text x="${currX - stepW/2}" y="${currY + 20}" fill="${color}" font-weight="${weight}" font-size="14" text-anchor="middle" font-family="Consolas">${i}</text>`;
+        
+        // Draw dp value above step
+        if (e.dpState[i] !== -1 && e.dpState[i] !== undefined) {
+            html += `<text x="${currX - stepW/2}" y="${currY - 10}" fill="${color}" font-size="12" text-anchor="middle" font-family="Consolas">dp=${e.dpState[i]}</text>`;
+        }
+    }
+    
+    // Close path to ground
+    pathD += `L ${currX} ${height - paddingY} Z`;
+    html += `<path d="${pathD}" fill="#252526" stroke="#555" stroke-width="2"/>`;
+    
+    // Draw Jumps
+    if (e.k && e.k <= n && e.type === "update" || e.type === "success") {
+        const targetX = paddingX + (e.k) * stepW - stepW/2;
+        const targetY = height - paddingY - (e.k) * stepH;
+        
+        if (e.read1 !== null && e.read1 > 0) {
+            const srcX1 = paddingX + (e.read1) * stepW - stepW/2;
+            const srcY1 = height - paddingY - (e.read1) * stepH;
+            html += `<path d="M ${srcX1} ${srcY1-25} Q ${(srcX1+targetX)/2} ${targetY-50} ${targetX-5} ${targetY-25}" fill="none" stroke="var(--active)" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow)"/>`;
+            html += `<text x="${(srcX1+targetX)/2}" y="${targetY-35}" fill="var(--active)" font-size="12" text-anchor="middle" font-family="Consolas">+1</text>`;
+        }
+        
+        if (e.read2 !== null && e.read2 > 0) {
+            const srcX2 = paddingX + (e.read2) * stepW - stepW/2;
+            const srcY2 = height - paddingY - (e.read2) * stepH;
+            html += `<path d="M ${srcX2} ${srcY2-25} Q ${(srcX2+targetX)/2} ${targetY-80} ${targetX-5} ${targetY-25}" fill="none" stroke="var(--active)" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow)"/>`;
+            html += `<text x="${(srcX2+targetX)/2}" y="${targetY-65}" fill="var(--active)" font-size="12" text-anchor="middle" font-family="Consolas">+2</text>`;
+        }
+    }
+    
+    svg.innerHTML = html;
+}
+
+function applyEventData(e) {
+    // Variables
+    document.getElementById("val-k").innerText = e.k !== null ? e.k : "-";
+    document.getElementById("val-dp1").innerText = e.read1 !== null ? e.dpState[e.read1] : "-";
+    document.getElementById("val-dp2").innerText = e.read2 !== null ? e.dpState[e.read2] : "-";
+    document.getElementById("val-dpk").innerText = e.write !== null && e.dpState[e.write] !== -1 ? e.dpState[e.write] : "-";
+
+    // Arrays
+    const renderArr = (arr) => arr.map((val, i) => {
+        let display = val === -1 ? "?" : val;
+        let cls = val === -1 ? "cell-unvisited" : "";
+        if (i === e.read1 || i === e.read2) cls += " cell-read";
+        else if (i === e.write) cls += " cell-write";
+        else if (i === e.k) cls += " cell-current";
+        
+        return `<div class="array-item"><span class="array-idx">${i}</span><div class="array-cell ${cls}">${display}</div></div>`;
+    }).join('');
+
+    document.getElementById("dpArray").innerHTML = renderArr(e.dpState);
+
+    // Graph Render
+    drawGraph(e);
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1000); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

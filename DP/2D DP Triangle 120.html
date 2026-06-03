@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 120 - Triangle (2D DP) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for computed/write */
+        --active: #ff9800;     /* Orange for current cell */
+        --neighbor: #2196f3;   /* Blue for dp[i+1][j], dp[i+1][j+1] reads */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 12px; color: #bbb;
+    }
+    .var-value { font-size: 16px; font-weight: bold; color: var(--active); margin-top: 4px; }
+    
+    /* Triangle Grid */
+    .triangle-wrapper {
+        display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 8px;
+        background: #1e1e1e; border-radius: 8px; border: 1px solid #444;
+    }
+    .triangle-row {
+        display: flex; gap: 8px; justify-content: center;
+    }
+    .triangle-cell {
+        width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
+        background: #252526; font-weight: bold; font-size: 16px; transition: all 0.3s;
+        color: #d4d4d4; border: 2px solid #555; border-radius: 6px; position: relative;
+    }
+    
+    /* Cell Highlights */
+    .cell-uncomputed { color: #666; font-weight: normal; }
+    .cell-computed { background: rgba(76, 175, 80, 0.1); border-color: var(--accent); color: var(--accent); }
+    .cell-read { border-color: var(--neighbor); box-shadow: 0 0 10px rgba(33, 150, 243, 0.4); color: var(--neighbor); transform: scale(1.05); z-index: 5; }
+    .cell-current { border-color: var(--active); box-shadow: 0 0 15px rgba(255, 152, 0, 0.6); color: var(--active); transform: scale(1.15); z-index: 10; background: #2d2d2d;}
+    
+    .cell-coord { position: absolute; bottom: 2px; right: 4px; font-size: 9px; color: #777; font-family: Consolas; font-weight: normal; }
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
+            <option value="tc1">1. LC Example 1 (n=4)</option>
+            <option value="tc2">2. Single Element (n=1)</option>
+            <option value="tc3">3. All Negatives (n=3)</option>
+            <option value="tc4">4. Larger Triangle (n=5)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Triangle (Rows by \n, Vals by ,):</label>
+        <textarea id="triangleInput" rows="2" cols="20">2&#10;3,4&#10;6,5,7&#10;4,1,8,3</textarea>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">PYTHON CODE (BOTTOM-UP 2D DP)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(N²)</strong><br>
+                Where N is the number of rows in the triangle. The algorithm visits every element in the triangle exactly once, starting from the second-to-last row up to the top. There are N*(N+1)/2 elements, making the time complexity proportional to N².<br><br>
+                <strong>Space Complexity: O(N²)</strong><br>
+                The provided solution explicitly builds a full 2D `dp` array of the same shape as the input triangle, requiring O(N²) space. <i>(Note: This can be optimized to O(N) by maintaining only a single 1D array representing the row directly below).</i>
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Row i <div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+                <div class="var-box">Col j <div class="var-value" id="val-j" style="color:var(--active);">-</div></div>
+                <div class="var-box">Cell Value <div class="var-value" id="val-cell" style="color:white;">-</div></div>
+                <div class="var-box">Left Child<div class="var-value" id="val-left" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">Right Child<div class="var-value" id="val-right" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">dp[i][j] <div class="var-value" id="val-total" style="color:var(--accent);">-</div></div>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">dp[][] Triangle State</h3>
+            </div>
+            <div id="triangle-visual" class="triangle-wrapper" style="flex: 1;"></div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- PYTHON DP LOGIC ---
+const PYTHON_CODE = [
+    "class Solution:",
+    "    def minimumTotal(self, triangle: List[List[int]]) -> int:",
+    "        n = len(triangle)",
+    "        if(n==1): return triangle[0][0]",
+    "        ",
+    "        dp = [[0]*(i+1) for i in range(n-1)]",
+    "        dp.append(triangle[-1])",
+    "        ",
+    "        for i in range(n-2, -1, -1):",
+    "            for j in range(i+1):",
+    "                dp[i][j] = triangle[i][j] + min(dp[i+1][j], dp[i+1][j+1])",
+    "",
+    "        return dp[0][0]"
+];
+
+const TEST_CASES = {
+    tc1: "2\n3,4\n6,5,7\n4,1,8,3",
+    tc2: "-10",
+    tc3: "-1\n2,3\n1,-1,-3",
+    tc4: "1\n2,3\n4,5,6\n7,8,9,10\n11,12,13,14,15"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = PYTHON_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i + 1}</div>`).join('');
+    let codeText = PYTHON_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'python' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs python">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const val = document.getElementById("testCases").value;
+    document.getElementById("triangleInput").value = TEST_CASES[val];
+}
+
+function parseTriangle() {
+    const lines = document.getElementById("triangleInput").value.trim().split("\n");
+    let triangle = [];
+    for(const line of lines) {
+        if(!line.trim()) continue;
+        triangle.push(line.split(",").map(Number));
+    }
+    return triangle;
+}
+
+function* simulateDP() {
+    const triangle = parseTriangle();
+    let n = triangle.length;
+    if (n === 0) return;
+    
+    let dp = Array(n).fill(null).map((_, i) => Array(i + 1).fill(null));
+
+    const snap = (line, msg, i = null, j = null, readL = null, readR = null, type = "info", isEnd = false) => ({
+        line, msg, type, i, j, readL, readR, isEnd,
+        dpState: JSON.parse(JSON.stringify(dp)), triangle, n
+    });
+
+    yield snap(3, `n = len(triangle) = ${n}.`);
+
+    yield snap(4, `Checking if n == 1.`);
+    if (n === 1) {
+        dp[0][0] = triangle[0][0];
+        yield snap(4, `n is 1. Returning triangle[0][0] = ${triangle[0][0]}.`, 0, 0, null, null, "success", true);
+        return;
+    }
+
+    yield snap(6, `Initializing dp array (first n-1 rows as 0, structurally).`);
+    
+    // Set bottom row
+    for (let j = 0; j < n; j++) {
+        dp[n-1][j] = triangle[n-1][j];
+    }
+    yield snap(7, `dp.append(triangle[-1]). The bottom row of dp matches the triangle.`, n-1, null, null, null, "update");
+
+    yield snap(9, `Entering bottom-up loop from row ${n-2} down to 0.`);
+
+    for (let i = n - 2; i >= 0; i--) {
+        yield snap(9, `--- Moving up to row ${i} ---`, i, null, null, null, "info");
+        for (let j = 0; j <= i; j++) {
+            yield snap(10, `Evaluating cell [${i}][${j}] (Triangle Value: ${triangle[i][j]}).`, i, j, null, null, "info");
+
+            let leftChild = dp[i+1][j];
+            let rightChild = dp[i+1][j+1];
+
+            yield snap(11, `Reading children: dp[${i+1}][${j}] = ${leftChild} and dp[${i+1}][${j+1}] = ${rightChild}.`, i, j, [i+1, j], [i+1, j+1], "info");
+
+            let minChild = Math.min(leftChild, rightChild);
+            dp[i][j] = triangle[i][j] + minChild;
+
+            yield snap(11, `Calculated dp[${i}][${j}] = ${triangle[i][j]} + min(${leftChild}, ${rightChild}) = ${dp[i][j]}.`, i, j, [i+1, j], [i+1, j+1], "update");
+        }
+    }
+
+    yield snap(13, `Loops finished. Minimum path sum is dp[0][0] = ${dp[0][0]}.`, 0, 0, null, null, "success", true);
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateDP();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: Make sure input is a valid triangle structure.`, "log-danger");
+    }
+}
+
+function applyEventData(e) {
+    // Variables Update
+    document.getElementById("val-i").innerText = e.i !== null ? e.i : "-";
+    document.getElementById("val-j").innerText = e.j !== null ? e.j : "-";
+    
+    let cellVal = (e.i !== null && e.j !== null && e.i < e.n && e.j <= e.i) ? e.triangle[e.i][e.j] : "-";
+    document.getElementById("val-cell").innerText = cellVal;
+    
+    let leftVal = e.readL !== null ? e.dpState[e.readL[0]][e.readL[1]] : "-";
+    document.getElementById("val-left").innerText = leftVal;
+    
+    let rightVal = e.readR !== null ? e.dpState[e.readR[0]][e.readR[1]] : "-";
+    document.getElementById("val-right").innerText = rightVal;
+    
+    let totalVal = "-";
+    if (e.i !== null && e.j !== null && e.dpState[e.i][e.j] !== null) totalVal = e.dpState[e.i][e.j];
+    else if (e.isEnd) totalVal = e.dpState[0][0];
+    document.getElementById("val-total").innerText = totalVal;
+
+    // Triangle Render
+    const wrapper = document.getElementById("triangle-visual");
+    let html = "";
+    
+    for(let r = 0; r < e.n; r++) {
+        html += `<div class="triangle-row">`;
+        for(let c = 0; c <= r; c++) {
+            let val = e.dpState[r][c];
+            let isComputed = val !== null;
+            let display = isComputed ? val : e.triangle[r][c];
+            let cls = isComputed ? "cell-computed" : "cell-uncomputed";
+            
+            // Highlight Logic
+            if (r === e.i && c === e.j) {
+                cls += " cell-current";
+            } else if (e.readL && e.readL[0] === r && e.readL[1] === c) {
+                cls += " cell-read";
+            } else if (e.readR && e.readR[0] === r && e.readR[1] === c) {
+                cls += " cell-read";
+            }
+            
+            html += `<div class="triangle-cell ${cls}">${display}<div class="cell-coord">${r},${c}</div></div>`;
+        }
+        html += `</div>`;
+    }
+    wrapper.innerHTML = html;
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1000); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

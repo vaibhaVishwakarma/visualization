@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode - Longest Common Subsequence Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for matches / diagonal trace */
+        --active: #ff9800;     /* Orange for current cell evaluation */
+        --neighbor: #2196f3;   /* Blue for top/left lookups */
+        --danger: #f44336;
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 520px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 320px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 12px; line-height: 1.5;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 12px; line-height: 1.5; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb; min-width: 100px;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* 2D DP Table Visuals */
+    .table-scroll { overflow-auto: auto; max-width: 100%; padding-bottom: 5px; }
+    .dp-table { border-collapse: separate; border-spacing: 4px; font-family: Consolas, monospace; margin: 0 auto; }
+    .dp-cell {
+        width: 40px; height: 40px; border-radius: 4px; border: 1px solid #444; background: #1e1e1e;
+        text-align: center; font-weight: bold; font-size: 14px; color: #d4d4d4; transition: all 0.2s;
+    }
+    .dp-header-cell {
+        width: 40px; height: 40px; background: #2d2d2d; font-size: 14px;
+        font-weight: bold; color: #aaa; text-align: center; border-radius: 4px;
+    }
+    
+    /* Cell Mutation Highlights */
+    .cell-eval { border-color: var(--active) !important; box-shadow: 0 0 8px var(--active); color: var(--active); }
+    .cell-lookup { border-color: var(--neighbor) !important; color: var(--neighbor); background: rgba(33, 150, 243, 0.05); }
+    .cell-match { border-color: var(--accent) !important; color: var(--accent); background: rgba(76, 175, 80, 0.1); }
+    .cell-backtrack { background: #4caf50 !important; color: white !important; border-color: #66bb6a !important; box-shadow: 0 0 10px rgba(76, 175, 80, 0.6); }
+    .cell-unvisited { opacity: 0.3; }
+
+    /* Action Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-match { color: var(--accent); font-weight: bold; }
+    .log-mismatch { color: var(--neighbor); }
+    .log-trace { color: #e91e63; font-weight: bold; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Presets:</label>
+        <select id="testCases" onchange="loadPreset()">
+            <option value="tc1">1. Main Example ("abcde", "ace")</option>
+            <option value="tc2">2. Full Match ("leetcode", "leetc")</option>
+            <option value="tc3">3. No Match ("abc", "def")</option>
+            <option value="tc4">4. Interleaved ("abc", "acb")</option>
+        </select>
+    </div>
+    <div class="header-group">
+        <label>Text 1 (Rows):</label>
+        <input id="text1Input" type="text" style="width: 100px;" value="abcde">
+    </div>
+    <div class="header-group">
+        <label>Text 2 (Cols):</label>
+        <input id="text2Input" type="text" style="width: 100px;" value="ace">
+    </div>
+    <button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">Java LCS Source Execution</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Subproblem Equations</h3>
+            <div class="footer-note">
+                If <code style="color:var(--accent)">text1[i-1] == text2[j-1]</code>:<br>
+                &nbsp;&nbsp;<strong>dp[i][j] = 1 + dp[i-1][j-1]</strong> (Diagonal Match)<br>
+                Else:<br>
+                &nbsp;&nbsp;<strong>dp[i][j] = max(dp[i-1][j], dp[i][j-1])</strong> (Max Upper / Left)
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Row Character (i)<div class="var-value" id="val-i">-</div></div>
+                <div class="var-box">Col Character (j)<div class="var-value" id="val-j">-</div></div>
+                <div class="var-box">LCS StringBuilder<div class="var-value" id="val-lcs" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <h3>Dynamic Programming Matrix Graph</h3>
+            <div class="table-scroll">
+                <table id="dpMatrixTable" class="dp-table"></table>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Step Analysis Logger</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER RESIZE LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 280 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+document.addEventListener('mouseup', function() {
+    isResizing = false;
+    resizer.classList.remove('resizing');
+    document.body.style.cursor = 'default';
+    document.body.style.userSelect = '';
+});
+
+// --- LCS JAVA CODE TEXT ---
+const JAVA_CODE = [
+    "public String longestCommonSubsequence(String text1, String text2) {",
+    "    int n = text1.length();",
+    "    int m = text2.length();",
+    "    int[][] dp = new int[n + 1][m + 1];",
+    "    ",
+    "    for (int i = 1; i <= n; i++) {",
+    "        for (int j = 1; j <= m; j++) {",
+    "            if (text1.charAt(i - 1) == text2.charAt(j - 1)) {",
+    "                dp[i][j] = 1 + dp[i - 1][j - 1];",
+    "            } else {",
+    "                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);",
+    "            }",
+    "        }",
+    "    }",
+    "    StringBuilder lcs = new StringBuilder();",
+    "    int i = n, j = m;",
+    "    while (i > 0 && j > 0) {",
+    "        if (text1.charAt(i - 1) == text2.charAt(j - 1)) {",
+    "            lcs.append(text1.charAt(i - 1));",
+    "            i--; j--;",
+    "        } else if (dp[i - 1][j] > dp[i][j - 1]) {",
+    "            i--;",
+    "        } else {",
+    "            j--;",
+    "        }",
+    "    }",
+    "    return lcs.reverse().toString();",
+    "}"
+];
+
+const PRESETS = {
+    tc1: { t1: "abcde", t2: "ace" },
+    tc2: { t1: "leetcode", t2: "leetc" },
+    tc3: { t1: "abc", t2: "def" },
+    tc4: { t1: "abc", t2: "acb" }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let globalT1 = "", globalT2 = "";
+
+function renderCodeBlock() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number'>${i + 1}</div>`).join('');
+    let rawText = JAVA_CODE.join('\n');
+    let highlighted;
+    try {
+        highlighted = hljs.highlight(rawText, { language: 'java' }).value.split('\n');
+    } catch(e) {
+        highlighted = rawText.split('\n');
+    }
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs java">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) {
+        element.classList.add("active-line");
+        element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    }
+}
+
+function loadPreset() {
+    let selection = PRESETS[document.getElementById("testCases").value];
+    document.getElementById("text1Input").value = selection.t1;
+    document.getElementById("text2Input").value = selection.t2;
+}
+
+// --- ENGINE MATRIX SIMULATION ---
+function* lcsSimulationEngine(t1, t2) {
+    let n = t1.length;
+    let m = t2.length;
+    
+    // Allocate matrix mapping table
+    let dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+    let cellStates = Array.from({ length: n + 1 }, () => Array(m + 1).fill("unvisited"));
+    
+    // Initialization of zero indices bounds
+    for(let i=0; i<=n; i++) cellStates[i][0] = "filled";
+    for(let j=0; j<=m; j++) cellStates[0][j] = "filled";
+
+    yield { line: 3, msg: `Allocated table matrix array grid DP of size [${n+1}][${m+1}]`, dp: copy2D(dp), states: copy2D(cellStates), i: 0, j: 0, sb: "" };
+
+    // Filling bottom up table loops
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            cellStates[i][j] = "eval";
+            let char1 = t1[i-1];
+            let char2 = t2[j-1];
+
+            if (char1 === char2) {
+                cellStates[i-1][j-1] = "lookup";
+                yield { line: 7, msg: `Characters evaluate match! text1[${i-1}]='${char1}' == text2[${j-1}]='${char2}'`, dp: copy2D(dp), states: copy2D(cellStates), i, j, sb: "" };
+                
+                dp[i][j] = 1 + dp[i-1][j-1];
+                cellStates[i][j] = "match";
+                cellStates[i-1][j-1] = "filled"; 
+                yield { line: 8, msg: `Computed cell dp[${i}][${j}] = 1 + diagonal(${dp[i-1][j-1]}) = ${dp[i][j]}`, dp: copy2D(dp), states: copy2D(cellStates), i, j, sb: "", type: "match" };
+            } else {
+                cellStates[i-1][j] = "lookup";
+                cellStates[i][j-1] = "lookup";
+                yield { line: 9, msg: `Mismatch found! text1[${i-1}]='${char1}' != text2[${j-1}]='${char2}'`, dp: copy2D(dp), states: copy2D(cellStates), i, j, sb: "" };
+                
+                dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+                cellStates[i][j] = "filled";
+                cellStates[i-1][j] = "filled";
+                cellStates[i][j-1] = "filled";
+                yield { line: 10, msg: `Computed cell dp[${i}][${j}] = max(top:${dp[i-1][j]}, left:${dp[i][j-1]}) = ${dp[i][j]}`, dp: copy2D(dp), states: copy2D(cellStates), i, j, sb: "", type: "mismatch" };
+            }
+        }
+    }
+
+    // Reconstruction Sequence Engine Trace back
+    yield { line: 14, msg: `Table fully populated. Initializing string building trace reconstruction from cell [${n}][${m}].`, dp: copy2D(dp), states: copy2D(cellStates), i: n, j: m, sb: "" };
+
+    let sb = [];
+    let r = n, c = m;
+    
+    while(r > 0 && c > 0) {
+        cellStates[r][c] = "backtrack";
+        let char1 = t1[r-1];
+        let char2 = t2[c-1];
+
+        yield { line: 17, msg: `Backtrack focus checking cell [${r}][${c}]. String characters compare values: '${char1}' and '${char2}'`, dp: copy2D(dp), states: copy2D(cellStates), i: r, j: c, sb: [...sb].reverse().join("") };
+
+        if (char1 === char2) {
+            sb.push(char1);
+            let prevR = r, prevC = c;
+            r--; c--;
+            cellStates[r][c] = "backtrack";
+            yield { line: 18, msg: `Match tracked! Appending character '${char1}' to builders stack. Moving diagonally up-left.`, dp: copy2D(dp), states: copy2D(cellStates), i: r, j: c, sb: [...sb].reverse().join(""), type: "trace" };
+        } else if (dp[prevRow(r)][c] > dp[r][prevCol(c)]) {
+            r--;
+            yield { line: 21, msg: `Top cell value (${dp[r][c]}) is greater than Left cell value (${dp[r+1][c-1]}). Shifting vertical step upwards.`, dp: copy2D(dp), states: copy2D(cellStates), i: r, j: c, sb: [...sb].reverse().join("") };
+        } else {
+            c--;
+            yield { line: 23, msg: `Left cell value (${dp[r][c]}) is equal or greater than Top cell value (${dp[r-1][c+1]}). Shifting horizontal step leftwards.`, dp: copy2D(dp), states: copy2D(cellStates), i: r, j: c, sb: [...sb].reverse().join("") };
+        }
+    }
+    if (r >= 0 && c >= 0) cellStates[r][c] = "backtrack";
+
+    let finalStr = [...sb].reverse().join("");
+    yield { line: 28, msg: `Backtrack finished. Final Longest Common Subsequence calculated output: "${finalStr}"`, dp: copy2D(dp), states: copy2D(cellStates), i: r, j: c, sb: finalStr, type: "trace", isEnd: true };
+}
+
+function prevRow(val) { return val - 1 >= 0 ? val - 1 : 0; }
+function prevCol(val) { return val - 1 >= 0 ? val - 1 : 0; }
+function copy2D(arr) { return arr.map(row => [...row]); }
+
+// --- UI DISPLAY COMPILER DOM CONTROLLER ---
+function generateSimulation() {
+    globalT1 = document.getElementById("text1Input").value;
+    globalT2 = document.getElementById("text2Input").value;
+    
+    events = [];
+    ptr = 0;
+    pause();
+
+    const builder = lcsSimulationEngine(globalT1, globalT2);
+    let nextResult = builder.next();
+    while(!nextResult.done) {
+        events.push(nextResult.value);
+        nextResult = builder.next();
+    }
+
+    document.getElementById("log").innerHTML = "";
+    applyStepTrace(0);
+    log(`[Initialization Completed] Grid matrix allocated. Ready to step trace computational paths.`);
+}
+
+function buildGridDOM(stateData) {
+    const table = document.getElementById("dpMatrixTable");
+    table.innerHTML = "";
+
+    // Generate Headers row
+    let headerRow = document.createElement("tr");
+    headerRow.appendChild(createCell("", "dp-header-cell")); // corner padding empty
+    headerRow.appendChild(createCell("Ø", "dp-header-cell"));
+    for(let j = 0; j < globalT2.length; j++) {
+        headerRow.appendChild(createCell(globalT2[j], "dp-header-cell"));
+    }
+    table.appendChild(headerRow);
+
+    // Build values mapping layout row matrix
+    for(let i = 0; i <= globalT1.length; i++) {
+        let rowObj = document.createElement("tr");
+        
+        // Row letter guide header
+        let rHeader = (i === 0) ? "Ø" : globalT1[i-1];
+        rowObj.appendChild(createCell(rHeader, "dp-header-cell"));
+
+        for(let j = 0; j <= globalT2.length; j++) {
+            let itemVal = stateData.dp[i][j];
+            let cellStatus = stateData.states[i][j];
+            let td = createCell(itemVal, "dp-cell");
+
+            // Apply style layout mappings
+            if (cellStatus === "eval") td.classList.add("cell-eval");
+            else if (cellStatus === "lookup") td.classList.add("cell-lookup");
+            else if (cellStatus === "match") td.classList.add("cell-match");
+            else if (cellStatus === "backtrack") td.classList.add("cell-backtrack");
+            else if (cellStatus === "unvisited") td.classList.add("cell-unvisited");
+            
+            rowObj.appendChild(td);
+        }
+        table.appendChild(rowObj);
+    }
+}
+
+function createCell(txt, cls) {
+    let td = document.createElement("td");
+    td.className = cls;
+    td.innerText = txt;
+    return td;
+}
+
+function applyStepTrace(targetIdx) {
+    document.getElementById("log").innerHTML = "";
+    let activePtr = 0;
+    
+    while(activePtr <= targetIdx && activePtr < events.length) {
+        let isFinalNode = (activePtr === targetIdx);
+        let ev = events[activePtr++];
+
+        if (isFinalNode) {
+            document.getElementById("val-i").innerText = ev.i > 0 ? `${ev.i} ('${globalT1[ev.i-1]}')` : ev.i;
+            document.getElementById("val-j").innerText = ev.j > 0 ? `${ev.j} ('${globalT2[ev.j-1]}')` : ev.j;
+            document.getElementById("val-lcs").innerText = ev.sb || "-";
+            
+            buildGridDOM(ev);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssLogClass = "";
+        if (ev.type === "match") cssLogClass = "log-match";
+        else if (ev.type === "mismatch") cssLogClass = "log-mismatch";
+        else if (ev.type === "trace") cssLogClass = "log-trace";
+
+        log(ev.msg, cssLogClass);
+    }
+    ptr = targetIdx + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function nextStep() {
+    if (ptr >= events.length) { pause(); return; }
+    applyStepTrace(ptr);
+}
+
+function prevStep() {
+    pause();
+    if (ptr <= 1) { applyStepTrace(0); return; }
+    applyStepTrace(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) generateSimulation();
+    nextStep();
+    autoTimer = setInterval(nextStep, 800);
+}
+
+function pause() {
+    if(autoTimer) clearInterval(autoTimer);
+}
+
+window.onload = () => {
+    generateSimulation();
+};
+</script>
+</body>
+</html>

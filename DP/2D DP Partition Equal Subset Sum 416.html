@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 416 - Partition Equal Subset Sum (2D DP)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for True / Success */
+        --active: #ff9800;     /* Orange for current cell */
+        --neighbor: #2196f3;   /* Blue for read cells */
+        --danger: #f44336;     /* Red for False / Error */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+    .val-danger { color: var(--danger) !important; }
+    .val-success { color: var(--accent) !important; }
+
+    /* 2D Matrix Grid */
+    .matrix-wrapper {
+        display: flex; overflow-x: auto; padding: 5px;
+    }
+    .matrix-grid {
+        display: grid; gap: 2px; background: #333; border: 1px solid #444; padding: 4px; border-radius: 6px;
+    }
+    .matrix-cell {
+        width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
+        background: #1e1e1e; font-weight: bold; font-size: 13px; transition: all 0.2s;
+        color: #d4d4d4; border: 2px solid transparent; border-radius: 4px; position: relative;
+    }
+    
+    .matrix-header { background: #252526; color: #888; font-size: 11px; width: auto; min-width: 35px; padding: 0 4px;}
+    
+    /* Array Cell Highlights */
+    .cell-false { color: #555; }
+    .cell-true { background: rgba(76, 175, 80, 0.15); color: var(--accent); }
+    .cell-read { border-color: var(--neighbor); box-shadow: inset 0 0 8px rgba(33, 150, 243, 0.5); z-index: 5; }
+    .cell-current { border-color: var(--active); box-shadow: 0 0 10px rgba(255, 152, 0, 0.6); transform: scale(1.15); z-index: 10; background: #2d2d2d; }
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-info { color: var(--neighbor); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--accent);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example 1 (1,5,11,5)</option>
+            <option value="tc2">2. LC Example 2 (1,2,3,5)</option>
+            <option value="tc3">3. Small Target (1,2,5)</option>
+            <option value="tc4">4. Exactly Divisible (2,2,4)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>nums = [</label>
+        <input id="numsInput" type="text" style="width: 150px;" value="1,5,11,5">
+        <label>]</label>
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">PYTHON CODE (2D DP)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(N &times; Target)</strong><br>
+                Where N is the number of elements and Target is half of the total sum. The algorithm iterates through every element for every possible sum up to the target, performing O(1) checks per cell.<br><br>
+                <strong>Space Complexity: O(N &times; Target)</strong><br>
+                We construct a 2D boolean `dp` array of size `N x (Target + 1)` to store whether a specific sum is achievable using a subset of the elements up to index `i`. <i>(Note: Can be optimized to O(Target) by only keeping the previous row).</i>
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Total Sum <div class="var-value" id="val-sum">-</div></div>
+                <div class="var-box">Target Sum <div class="var-value" id="val-target" style="color:white;">-</div></div>
+                <div class="var-box">Curr Item (nums[i]) <div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+                <div class="var-box">Curr Target (t) <div class="var-value" id="val-t" style="color:var(--active);">-</div></div>
+                <div class="var-box">notTaken <div class="var-value" id="val-not" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">taken <div class="var-value" id="val-taken" style="color:var(--neighbor);">-</div></div>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">dp[][] Matrix (Rows = items, Cols = sums 0 to Target)</h3>
+            </div>
+            <div class="matrix-wrapper" style="flex: 1;">
+                <div id="dpMatrix" class="matrix-grid"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- PYTHON DP LOGIC ---
+const PYTHON_CODE = [
+    "class Solution:",
+    "    def canPartition(self, nums: List[int]) -> bool:",
+    "        n = len(nums)",
+    "        sm = sum(nums)",
+    "",
+    "        if(sm & 1): return False",
+    "        target = sm >> 1",
+    "",
+    "        dp = [[False] * (target + 1) for _ in range(n)]",
+    "",
+    "        for i in range(n): dp[i][0] = True",
+    "        if(nums[0] <= target):",
+    "            dp[0][nums[0]] = True",
+    "",
+    "        for i in range(1, n):",
+    "            for t in range(target + 1):",
+    "                taken = False",
+    "                if(nums[i] <= t): ",
+    "                    taken = dp[i-1][t - nums[i]]",
+    "                notTaken = dp[i-1][t] ",
+    "                dp[i][t] = taken or notTaken",
+    "",
+    "        return dp[n-1][target]"
+];
+
+const TEST_CASES = {
+    tc1: "1,5,11,5",
+    tc2: "1,2,3,5",
+    tc3: "1,2,5",
+    tc4: "2,2,4"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = PYTHON_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i}'>${i}</div>`).join('');
+    let codeText = PYTHON_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'python' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs python">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("numsInput").value = tc;
+    prepareExecution();
+}
+
+function* simulateDP() {
+    const numsStr = document.getElementById("numsInput").value;
+    const nums = numsStr.split(",").map(Number).filter(n => !isNaN(n));
+    const n = nums.length;
+    let sm = null;
+    let target = null;
+    let dp = null;
+
+    const snap = (line, msg, i = null, t = null, read1 = null, read2 = null, type = "info", isEnd = false, nT = null, tak = null) => ({
+        line, msg, type, i, t, read1, read2, isEnd, notTakenVal: nT, takenVal: tak,
+        dpState: dp ? JSON.parse(JSON.stringify(dp)) : null,
+        nums, target, sm
+    });
+
+    if (n === 0) return;
+
+    sm = nums.reduce((a, b) => a + b, 0);
+    yield snap(3, `Calculated sum of array elements: sm = ${sm}.`, null, null, null, null, "info");
+
+    yield snap(5, `Checking if sum is odd (sm & 1).`, null, null, null, null, "info");
+    if (sm % 2 !== 0) {
+        yield snap(5, `Sum is odd (${sm}). Cannot partition into two equal integer subsets. Returning False.`, null, null, null, null, "danger", true);
+        return;
+    }
+
+    target = sm / 2;
+    yield snap(6, `Sum is even. Target sum for each subset is ${sm} >> 1 = ${target}.`, null, null, null, null, "info");
+
+    dp = Array(n).fill(0).map(() => Array(target + 1).fill(false));
+    yield snap(8, `Initialized DP table of size ${n} x ${target + 1} with False.`, null, null, null, null, "info");
+
+    yield snap(10, `Setting dp[i][0] = True for all rows. (Sum 0 is always possible).`, null, null, null, null, "update");
+    for (let i = 0; i < n; i++) {
+        dp[i][0] = true;
+    }
+
+    yield snap(11, `Checking if nums[0] <= target (${nums[0]} <= ${target}).`, null, null, null, null, "info");
+    if (nums[0] <= target) {
+        dp[0][nums[0]] = true;
+        yield snap(12, `Set dp[0][${nums[0]}] = True. (Can make sum ${nums[0]} using first element).`, 0, nums[0], null, null, "update");
+    }
+
+    yield snap(14, `Entering nested loops: i from 1 to ${n-1}, t from 0 to ${target}.`, null, null, null, null, "info");
+
+    for (let i = 1; i < n; i++) {
+        for (let t = 0; t <= target; t++) {
+            let taken = false;
+            let read2 = null;
+
+            yield snap(17, `Evaluating dp[${i}][${t}] with nums[${i}]=${nums[i]}. Checking if nums[i] <= t (${nums[i]} <= ${t}).`, i, t, null, null, "info");
+
+            if (nums[i] <= t) {
+                taken = dp[i-1][t - nums[i]];
+                read2 = [i-1, t - nums[i]];
+                yield snap(18, `Yes. taken = dp[${i-1}][${t} - ${nums[i]}] = dp[${i-1}][${t-nums[i]}] = ${taken}.`, i, t, null, read2, "info", false, null, taken);
+            } else {
+                yield snap(17, `No. Cannot take nums[${i}] since it exceeds current target sum ${t}. taken = False.`, i, t, null, null, "info", false, null, false);
+            }
+
+            let notTaken = dp[i-1][t];
+            yield snap(19, `notTaken = dp[${i-1}][${t}] = ${notTaken}.`, i, t, [i-1, t], read2, "info", false, notTaken, taken);
+
+            dp[i][t] = taken || notTaken;
+            yield snap(20, `dp[${i}][${t}] = taken OR notTaken = ${taken} OR ${notTaken} = ${dp[i][t]}.`, i, t, [i-1, t], read2, dp[i][t] ? "success" : "update", false, notTaken, taken);
+        }
+    }
+
+    let finalAns = dp[n-1][target];
+    yield snap(22, `Finished. Returning dp[${n-1}][${target}] = ${finalAns}.`, n-1, target, null, null, finalAns ? "success" : "danger", true);
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateDP();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function applyEventData(e) {
+    // Variables
+    let smBox = document.getElementById("val-sum");
+    smBox.innerText = e.sm !== null ? e.sm : "-";
+    if (e.sm !== null && e.sm % 2 !== 0) smBox.classList.add("val-danger");
+    else smBox.classList.remove("val-danger");
+
+    document.getElementById("val-target").innerText = e.target !== null ? e.target : "-";
+    document.getElementById("val-i").innerText = e.i !== null ? `${e.nums[e.i]} (idx:${e.i})` : "-";
+    document.getElementById("val-t").innerText = e.t !== null ? e.t : "-";
+    
+    document.getElementById("val-not").innerText = e.notTakenVal !== null ? (e.notTakenVal ? "T" : "F") : "-";
+    document.getElementById("val-taken").innerText = e.takenVal !== null ? (e.takenVal ? "T" : "F") : "-";
+
+    // Matrix Render
+    const grid = document.getElementById("dpMatrix");
+    if (!e.dpState) {
+        grid.innerHTML = "";
+        return;
+    }
+
+    let n = e.nums.length;
+    let target = e.target;
+    
+    grid.style.gridTemplateColumns = `auto repeat(${target + 1}, 35px)`;
+    
+    let html = `<div class="matrix-cell matrix-header" style="background:transparent; border:none;"></div>`;
+    for(let t = 0; t <= target; t++) {
+        html += `<div class="matrix-cell matrix-header">${t}</div>`;
+    }
+    
+    for(let i = 0; i < n; i++) {
+        html += `<div class="matrix-cell matrix-header">n[${i}]=${e.nums[i]}</div>`;
+        for(let t = 0; t <= target; t++) {
+            let val = e.dpState[i][t];
+            let display = val ? "T" : "F";
+            let cls = val ? "cell-true" : "cell-false";
+            
+            // Highlight Logic
+            if (i === e.i && t === e.t) {
+                cls += " cell-current";
+            } else if (e.read1 && e.read1[0] === i && e.read1[1] === t) {
+                cls += " cell-read";
+            } else if (e.read2 && e.read2[0] === i && e.read2[1] === t) {
+                cls += " cell-read";
+            }
+            
+            html += `<div class="matrix-cell ${cls}">${display}</div>`;
+        }
+    }
+    grid.innerHTML = html;
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1000); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+};
+</script>
+</body>
+</html>
