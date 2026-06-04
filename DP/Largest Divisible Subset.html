@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 368 - Largest Divisible Subset Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    
+        --bg-panel: #252526;   
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for division matches */
+        --active: #ff9800;     /* Orange for outer loop 'i' */
+        --neighbor: #2196f3;   /* Blue for inner loop 'prev' */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 530px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+        border-right: 2px solid #2d2d2d;
+    }
+
+    /* Right Panel (Visualization Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+        border: 1px solid var(--border);
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 11px; line-height: 1.45;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-line-numbers div { height: 16px; } 
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 11px; line-height: 1.45; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; height: 16px; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb; min-width: 100px;
+    }
+    .var-value { font-size: 16px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* 2D State Columns/Tables */
+    .table-scroll { overflow: auto; max-width: 100%; padding-bottom: 5px; }
+    .dp-table { border-collapse: separate; border-spacing: 6px; font-family: Consolas, monospace; margin: 0 auto; width: 100%; }
+    .dp-cell {
+        padding: 10px; border-radius: 4px; border: 1px solid #444; background: #1e1e1e;
+        text-align: center; font-weight: bold; font-size: 14px; transition: all 0.15s;
+    }
+    .dp-header-cell {
+        padding: 8px; background: #2d2d2d; font-size: 12px;
+        font-weight: bold; color: #aaa; text-align: center; border-radius: 4px;
+    }
+    
+    /* Dynamic Tracking States */
+    .cell-i { border-color: var(--active) !important; color: var(--active) !important; background: rgba(255, 152, 0, 0.05); }
+    .cell-prev { border-color: var(--neighbor) !important; color: var(--neighbor) !important; background: rgba(33, 150, 243, 0.05); }
+    .cell-match { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(76, 175, 80, 0.1) !important; }
+    .cell-trace { background: #3a3a1a !important; border-color: #ffd54f !important; box-shadow: 0 0 6px #ffd54f; }
+
+    /* Action Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-match { color: var(--accent); font-weight: bold; }
+    .log-trace { color: #ffd54f; font-weight: bold; }
+    .log-final { color: #ffd54f; font-weight: bold; font-size: 14px; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Presets:</label>
+        <select id="testCases" onchange="loadPreset()">
+            <option value="tc1">1. Multi-Chain [1, 16, 2, 4, 8] -> [1, 2, 4, 8, 16]</option>
+            <option value="tc2">2. Interleaved Divisors [1, 2, 3, 6] -> [1, 2, 6] or [1, 3, 6]</option>
+            <option value="tc3">3. Co-Prime Distractors [3, 5, 10, 20] -> [5, 10, 20]</option>
+        </select>
+    </div>
+    <div class="header-group">
+        <label>Input Array (arr):</label>
+        <input id="arrayInput" type="text" style="width: 200px;" value="1, 16, 2, 4, 8">
+    </div>
+    <button class="primary" onclick="generateSimulation()">Initialize Matrix</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">C++ Divisible LIS Trace</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Subset Growth Rules</h3>
+            <div class="footer-note">
+                • <strong>Divisibility Condition</strong>: `arr[i] % arr[prev] == 0`<br>
+                • <strong>Length Check</strong>: Only updates if `dp[i] < dp[prev] + 1`<br>
+                • <strong>Backtrack Pointer</strong>: `hash[i]` records `prev` to let us trace the final chain back to the beginning.
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Pointers (i, prev)<div class="var-value" id="val-ptrs">-</div></div>
+                <div class="var-box">Values (arr[i], arr[prev])<div class="var-value" id="val-vals">-</div></div>
+                <div class="var-box">Max Index (maxi)<div class="var-value" id="val-maxi" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <h3>Dynamic Subsequence Allocation State</h3>
+            <div class="table-scroll">
+                <table id="dpMatrixTable" class="dp-table"></table>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Step Analysis Logger</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CPP_CODE = [
+    "vector<int> largestDivisibleSubset(vector<int>& arr) {",
+    "    int n = arr.size();",
+    "    sort(arr.begin(), arr.end());",
+    "    vector<int> dp(n, 1), hash(n, -1);",
+    "    int maxi = 0; // Initialize to track longest subset index",
+    "    ",
+    "    for(int i = 1; i < n ; i++){",
+    "        for(int prev = i-1 ; prev >= 0; prev-- ){",
+    "            if(arr[i] % arr[prev] == 0 && dp[i] < dp[prev] + 1){",
+    "                dp[i] = dp[prev] + 1;",
+    "                hash[i] = prev;",
+    "            }",
+    "        }",
+    "        if(dp[i] > dp[maxi]) maxi = i;",
+    "    }",
+    "    // Traceback Chain to rebuild answers",
+    "    vector<int> ans; int ind = maxi;",
+    "    while(ind != -1){",
+    "        ans.push_back(arr[ind]);",
+    "        ind = hash[ind];",
+    "    }",
+    "    return ans;",
+    "}"
+];
+
+const PRESETS = {
+    tc1: "1, 16, 2, 4, 8",
+    tc2: "1, 2, 3, 6",
+    tc3: "3, 5, 10, 20"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let globalArr = [];
+
+function renderCodeBlock() {
+    let lineNumbers = CPP_CODE.map((_, i) => `<div>${i + 1}</div>`).join('');
+    let rawText = CPP_CODE.join('\n');
+    let highlighted = hljs.highlight(rawText, { language: 'cpp' }).value.split('\n');
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs cpp">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) element.classList.add("active-line");
+}
+
+function loadPreset() {
+    document.getElementById("arrayInput").value = PRESETS[document.getElementById("testCases").value];
+    generateSimulation();
+}
+
+function* subsetSimulationEngine(arr) {
+    let sorted = [...arr].sort((a, b) => a - b);
+    let n = sorted.length;
+    
+    let dp = Array(n).fill(1);
+    let hash = Array(n).fill(-1);
+    let maxi = 0;
+
+    yield { line: 2, msg: `Sorted input array to secure forward multi-divisibility bounds: [${sorted.join(', ')}]`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i: 0, prev: -1, phase: "build" };
+
+    for (let i = 1; i < n; i++) {
+        yield { line: 6, msg: `Set outer target scan cursor i = ${i} (Value: ${sorted[i]})`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i, prev: -1, phase: "build" };
+        
+        for (let prev = i - 1; prev >= 0; prev--) {
+            yield { line: 7, msg: `Checking inner divisor candidate index prev = ${prev} (Value: ${sorted[prev]})`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i, prev, phase: "build" };
+
+            if (sorted[i] % sorted[prev] === 0) {
+                if (dp[i] < dp[prev] + 1) {
+                    dp[i] = dp[prev] + 1;
+                    hash[i] = prev;
+                    yield { line: 9, msg: `Valid pair link found! ${sorted[i]} % ${sorted[prev]} == 0. Growing subset chain length to ${dp[i]}.`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i, prev, phase: "match" };
+                } else {
+                    yield { line: 8, msg: `Divisible link found, but it doesn't give us a longer subset chain than our current path. Skipping update.`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i, prev, phase: "build" };
+                }
+            } else {
+                yield { line: 8, msg: `${sorted[i]} is not divisible by ${sorted[prev]}. Chain invalid here.`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i, prev, phase: "build" };
+            }
+        }
+        
+        if (dp[i] > dp[maxi]) {
+            maxi = i;
+            yield { line: 13, msg: `New globally longest divisible subset length found ending at index ${maxi}.`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i, prev: -1, phase: "build" };
+        }
+    }
+
+    // BACKTRACK PHASE
+    yield { line: 16, msg: `DP steps finished. Initiating parent index traceback chain starting from tail max index ${maxi}`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i: -1, prev: -1, phase: "trace-init" };
+    
+    let ind = maxi;
+    let traceHistory = [];
+    while (ind !== -1) {
+        traceHistory.push(ind);
+        yield { line: 18, msg: `Traceback added element: ${sorted[ind]} (at index ${ind})`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i: -1, prev: -1, phase: "trace", trace: [...traceHistory] };
+        ind = hash[ind];
+    }
+
+    let finalOutput = traceHistory.map(idx => sorted[idx]).reverse();
+    yield { line: 21, msg: `Reversed chain to get output subset: [${finalOutput.join(', ')}]`, arr: [...sorted], dp: [...dp], hash: [...hash], maxi, i: -1, prev: -1, phase: "final", trace: [...traceHistory] };
+}
+
+function generateSimulation() {
+    let rawStr = document.getElementById("arrayInput").value;
+    globalArr = rawStr.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    
+    events = [];
+    ptr = 0;
+    pause();
+
+    const builder = subsetSimulationEngine(globalArr);
+    let nextResult = builder.next();
+    while(!nextResult.done) {
+        events.push(nextResult.value);
+        nextResult = builder.next();
+    }
+
+    document.getElementById("log").innerHTML = "";
+    applyStepTrace(0);
+}
+
+function buildGridDOM(stateData) {
+    const table = document.getElementById("dpMatrixTable");
+    table.innerHTML = "";
+
+    let h1 = document.createElement("tr");
+    h1.appendChild(createCell("Metric Column", "dp-header-cell"));
+    stateData.arr.forEach((_, idx) => {
+        h1.appendChild(createCell(`Index [${idx}]`, "dp-header-cell"));
+    });
+    table.appendChild(h1);
+
+    let rowArr = document.createElement("tr");
+    rowArr.appendChild(createCell("Sorted Array (arr)", "dp-header-cell"));
+    stateData.arr.forEach((val, idx) => {
+        let td = createCell(val, "dp-cell");
+        applyStyleHighlight(td, idx, stateData);
+        rowArr.appendChild(td);
+    });
+    table.appendChild(rowArr);
+
+    let rowDp = document.createElement("tr");
+    rowDp.appendChild(createCell("Subset Len (dp)", "dp-header-cell"));
+    stateData.dp.forEach((val, idx) => {
+        let td = createCell(val, "dp-cell");
+        applyStyleHighlight(td, idx, stateData);
+        rowDp.appendChild(td);
+    });
+    table.appendChild(rowDp);
+
+    let rowHash = document.createElement("tr");
+    rowHash.appendChild(createCell("Parent Link (hash)", "dp-header-cell"));
+    stateData.hash.forEach((val, idx) => {
+        let td = createCell(val === -1 ? "-1" : val, "dp-cell");
+        applyStyleHighlight(td, idx, stateData);
+        rowHash.appendChild(td);
+    });
+    table.appendChild(rowHash);
+}
+
+function applyStyleHighlight(td, idx, stateData) {
+    if (stateData.phase === "trace" || stateData.phase === "final" || stateData.phase === "trace-init") {
+        if (stateData.trace && stateData.trace.includes(idx)) {
+            td.classList.add("cell-trace");
+        }
+        if (idx === stateData.maxi) td.style.outline = "2px solid var(--accent)";
+        return;
+    }
+    if (idx === stateData.i) td.classList.add("cell-i");
+    if (idx === stateData.prev) {
+        if (stateData.phase === "match") td.classList.add("cell-match");
+        else td.classList.add("cell-prev");
+    }
+}
+
+function createCell(txt, cls) {
+    let td = document.createElement("td");
+    td.className = cls;
+    td.innerText = txt;
+    return td;
+}
+
+function applyStepTrace(targetIdx) {
+    document.getElementById("log").innerHTML = "";
+    let activePtr = 0;
+    
+    while(activePtr <= targetIdx && activePtr < events.length) {
+        let isFinalNode = (activePtr === targetIdx);
+        let ev = events[activePtr++];
+
+        if (isFinalNode) {
+            document.getElementById("val-ptrs").innerText = ev.i !== -1 ? `i: ${ev.i}, prev: ${ev.prev !== -1 ? ev.prev : 'Ø'}` : "Backtrack Phase";
+            document.getElementById("val-vals").innerText = (ev.i !== -1 && ev.prev !== -1) ? `arr[i]: ${ev.arr[ev.i]} | arr[prev]: ${ev.arr[ev.prev]}` : "-";
+            document.getElementById("val-maxi").innerText = `Index ${ev.maxi} (Length: ${ev.dp[ev.maxi]})`;
+            
+            buildGridDOM(ev);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssLogClass = "";
+        if (ev.phase === "match") cssLogClass = "log-match";
+        else if (ev.phase === "trace" || ev.phase === "trace-init") cssLogClass = "log-trace";
+        else if (ev.phase === "final") cssLogClass = "log-final";
+
+        log(ev.msg, cssLogClass);
+    }
+    ptr = targetIdx + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> • ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function nextStep() {
+    if (ptr >= events.length) { pause(); return; }
+    applyStepTrace(ptr);
+}
+
+function prevStep() {
+    pause();
+    if (ptr <= 1) { applyStepTrace(0); return; }
+    applyStepTrace(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) generateSimulation();
+    nextStep();
+    autoTimer = setInterval(nextStep, 500);
+}
+
+function pause() {
+    if(autoTimer) clearInterval(autoTimer);
+}
+
+window.onload = () => {
+    generateSimulation();
+};
+</script>
+</body>
+</html>

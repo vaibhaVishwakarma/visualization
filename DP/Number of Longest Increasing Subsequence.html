@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 673 - Number of LIS Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    
+        --bg-panel: #252526;   
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for a path length increase */
+        --alternate: #9c27b0;  /* Purple for alternate combo paths discovered */
+        --active: #ff9800;     /* Orange for index i */
+        --neighbor: #2196f3;   /* Blue for index prev */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 530px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+        border-right: 2px solid #2d2d2d;
+    }
+
+    /* Right Panel (Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+        border: 1px solid var(--border);
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 11px; line-height: 1.45;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-line-numbers div { height: 16px; } 
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 11px; line-height: 1.45; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; height: 16px; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb; min-width: 100px;
+    }
+    .var-value { font-size: 16px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* Matrix Design */
+    .table-scroll { overflow: auto; max-width: 100%; padding-bottom: 5px; }
+    .dp-table { border-collapse: separate; border-spacing: 6px; font-family: Consolas, monospace; margin: 0 auto; width: 100%; }
+    .dp-cell {
+        padding: 10px; border-radius: 4px; border: 1px solid #444; background: #1e1e1e;
+        text-align: center; font-weight: bold; font-size: 14px; transition: all 0.15s;
+    }
+    .dp-header-cell {
+        padding: 8px; background: #2d2d2d; font-size: 12px;
+        font-weight: bold; color: #aaa; text-align: center; border-radius: 4px;
+    }
+    
+    /* Interactive States styles */
+    .cell-i { border-color: var(--active) !important; color: var(--active) !important; background: rgba(255, 152, 0, 0.05); }
+    .cell-prev { border-color: var(--neighbor) !important; color: var(--neighbor) !important; background: rgba(33, 150, 243, 0.05); }
+    .cell-new-max { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(76, 175, 80, 0.12) !important; }
+    .cell-add-combo { border-color: var(--alternate) !important; color: var(--alternate) !important; background: rgba(156, 39, 176, 0.12) !important; }
+    .cell-final-select { background: #3a3a1a !important; border-color: #ffd54f !important; box-shadow: 0 0 6px #ffd54f; }
+
+    /* Action Log Layout */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-max { color: var(--accent); font-weight: bold; }
+    .log-combo { color: #d687ff; font-weight: bold; }
+    .log-final { color: #ffd54f; font-weight: bold; font-size: 14px; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Presets:</label>
+        <select id="testCases" onchange="loadPreset()">
+            <option value="tc1">1. Multiple LIS paths [1, 3, 5, 4, 7] -> Ans: 2 (Paths: 1->3->5->7, 1->3->4->7)</option>
+            <option value="tc2">2. Identical Values [2, 2, 2, 2, 2] -> Ans: 5 (Each index standalone length 1)</option>
+            <option value="tc3">3. Escalation Jump [1, 2, 4, 3, 5, 4, 7] -> Ans: 3</option>
+        </select>
+    </div>
+    <div class="header-group">
+        <label>Input Array (nums):</label>
+        <input id="arrayInput" type="text" style="width: 220px;" value="1, 3, 5, 4, 7">
+    </div>
+    <button class="primary" onclick="generateSimulation()">Initialize Analysis</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">C++ Multi-State LIS Branching</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Combination Tracking Rules</h3>
+            <div class="footer-note">
+                • <strong>If length increases (`dp[i] < dp[prev] + 1`)</strong>:<br>
+                &nbsp;&nbsp;A strictly longer path has been opened up. Overwrite length and reset combinations from the contributor branch: `cnts[i] = cnts[prev]`.
+                <hr style="border-color:#333; margin: 6px 0;">
+                • <strong>If length ties (`dp[i] == dp[prev] + 1`)</strong>:<br>
+                &nbsp;&nbsp;An alternate routing can match the current max length record. Accumulate the total counts: `cnts[i] += cnts[prev]`.
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Pointers (i, prev)<div class="var-value" id="val-ptrs">-</div></div>
+                <div class="var-box">Values (nums[i] &gt; nums[prev])<div class="var-value" id="val-vals">-</div></div>
+                <div class="var-box">Global Max Length<div class="var-value" id="val-maxl" style="color:var(--active);">-</div></div>
+            </div>
+
+            <h3>Dual State Vector Grid Tracking</h3>
+            <div class="table-scroll">
+                <table id="dpMatrixTable" class="dp-table"></table>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Step Analysis Logger</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CPP_CODE = [
+    "int findNumberOfLIS(vector<int>& nums) {",
+    "    int n = nums.size();",
+    "    vector<int> dp(n, 1), cnts(n, 1);",
+    "    int maxl = 1;",
+    "    ",
+    "    for(int i = 1 ; i < n ; i++){",
+    "        for(int prev = 0; prev < i ; prev++){",
+    "            if(nums[i] > nums[prev] && dp[i] < dp[prev] + 1){",
+    "                dp[i] = dp[prev] + 1;",
+    "                cnts[i] = cnts[prev];",
+    "            }",
+    "            else if (nums[i] > nums[prev] && dp[i] == dp[prev] + 1){",
+    "                cnts[i] += cnts[prev];",
+    "            }",
+    "        }",
+    "        maxl = max(maxl, dp[i]);",
+    "    }",
+    "    ",
+    "    int cnt = 0;",
+    "    for(int i = 0 ; i < n ; i++){",
+    "        if(dp[i] == maxl) cnt += cnts[i];",
+    "    }",
+    "    return cnt;",
+    "}"
+];
+
+const PRESETS = {
+    tc1: "1, 3, 5, 4, 7",
+    tc2: "2, 2, 2, 2, 2",
+    tc3: "1, 2, 4, 3, 5, 4, 7"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let globalNums = [];
+
+function renderCodeBlock() {
+    let lineNumbers = CPP_CODE.map((_, i) => `<div>${i + 1}</div>`).join('');
+    let rawText = CPP_CODE.join('\n');
+    let highlighted = hljs.highlight(rawText, { language: 'cpp' }).value.split('\n');
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs cpp">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) element.classList.add("active-line");
+}
+
+function loadPreset() {
+    document.getElementById("arrayInput").value = PRESETS[document.getElementById("testCases").value];
+    generateSimulation();
+}
+
+function* lisCountSimulationEngine(nums) {
+    let n = nums.length;
+    if (n === 0) return;
+
+    let dp = Array(n).fill(1);
+    let cnts = Array(n).fill(1);
+    let maxl = 1;
+
+    yield { line: 2, msg: `Initialized local data structures. Initial states set to base length 1 and combination weight 1.`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i: 0, prev: -1, phase: "init" };
+
+    for (let i = 1; i < n; i++) {
+        yield { line: 5, msg: `Set outer tracking index position i = ${i} (Value: ${nums[i]})`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i, prev: -1, phase: "seek" };
+
+        for (let prev = 0; prev < i; prev++) {
+            yield { line: 6, msg: `Evaluating inner subproblem predecessor option prev = ${prev} (Value: ${nums[prev]})`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i, prev, phase: "seek" };
+
+            if (nums[i] > nums[prev]) {
+                if (dp[i] < dp[prev] + 1) {
+                    dp[i] = dp[prev] + 1;
+                    cnts[i] = cnts[prev];
+                    yield { line: 8, msg: `Increasing path found! ${nums[i]} > ${nums[prev]}. Extending sequence length to ${dp[i]}. Inherited combination path count = ${cnts[i]}.`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i, prev, phase: "new-max" };
+                } else if (dp[i] === dp[prev] + 1) {
+                    cnts[i] += cnts[prev];
+                    yield { line: 11, msg: `Alternate routing found with equal max length ${dp[i]}! Adding up path combinations: +${cnts[prev]} paths (Total paths to index ${i} now = ${cnts[i]}).`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i, prev, phase: "add-combo" };
+                } else {
+                    yield { line: 7, msg: `${nums[i]} > ${nums[prev]}, but this path yields a shorter length than what index ${i} already found. Skipping.`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i, prev, phase: "seek" };
+                }
+            } else {
+                yield { line: 7, msg: `Sequence condition failed: ${nums[i]} <= ${nums[prev]}. Elements do not strictly increase.`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i, prev, phase: "seek" };
+            }
+        }
+        maxl = Math.max(maxl, dp[i]);
+    }
+
+    // ACCUMULATION PHASE
+    yield { line: 17, msg: `Matrix processing finished. Summing up total path varieties that achieve global max length ${maxl}.`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i: -1, prev: -1, phase: "tally-init" };
+
+    let finalAccumulatedCount = 0;
+    for(let i = 0; i < n; i++) {
+        if(dp[i] === maxl) {
+            finalAccumulatedCount += cnts[i];
+            yield { line: 19, msg: `Index ${i} achieves the max length of ${maxl}. Adding its count of ${cnts[i]} (Current sum = ${finalAccumulatedCount})`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i: -1, prev: i, phase: "tally-match" };
+        }
+    }
+
+    yield { line: 21, msg: `Analysis complete! Total number of distinct Longest Increasing Subsequences is: ${finalAccumulatedCount}`, nums: [...nums], dp: [...dp], cnts: [...cnts], maxl, i: -1, prev: -1, phase: "final", answer: finalAccumulatedCount };
+}
+
+function generateSimulation() {
+    let rawStr = document.getElementById("arrayInput").value;
+    globalNums = rawStr.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    
+    events = [];
+    ptr = 0;
+    pause();
+
+    const builder = lisCountSimulationEngine(globalNums);
+    let nextResult = builder.next();
+    while(!nextResult.done) {
+        events.push(nextResult.value);
+        nextResult = builder.next();
+    }
+
+    document.getElementById("log").innerHTML = "";
+    applyStepTrace(0);
+}
+
+function buildGridDOM(stateData) {
+    const table = document.getElementById("dpMatrixTable");
+    table.innerHTML = "";
+
+    let h1 = document.createElement("tr");
+    h1.appendChild(createCell("Metric Title", "dp-header-cell"));
+    stateData.nums.forEach((_, idx) => {
+        h1.appendChild(createCell(`Index [${idx}]`, "dp-header-cell"));
+    });
+    table.appendChild(h1);
+
+    let rowNums = document.createElement("tr");
+    rowNums.appendChild(createCell("Values (nums)", "dp-header-cell"));
+    stateData.nums.forEach((val, idx) => {
+        let td = createCell(val, "dp-cell");
+        applyStyleHighlight(td, idx, stateData);
+        rowNums.appendChild(td);
+    });
+    table.appendChild(rowNums);
+
+    let rowDp = document.createElement("tr");
+    rowDp.appendChild(createCell("Path Length (dp)", "dp-header-cell"));
+    stateData.dp.forEach((val, idx) => {
+        let td = createCell(val, "dp-cell");
+        applyStyleHighlight(td, idx, stateData);
+        rowDp.appendChild(td);
+    });
+    table.appendChild(rowDp);
+
+    let rowCnts = document.createElement("tr");
+    rowCnts.appendChild(createCell("Path Count (cnts)", "dp-header-cell"));
+    stateData.cnts.forEach((val, idx) => {
+        let td = createCell(val, "dp-cell");
+        applyStyleHighlight(td, idx, stateData);
+        rowCnts.appendChild(td);
+    });
+    table.appendChild(rowCnts);
+}
+
+function applyStyleHighlight(td, idx, stateData) {
+    if (stateData.phase === "tally-match" || stateData.phase === "tally-init" || stateData.phase === "final") {
+        if (stateData.dp[idx] === stateData.maxl) {
+            td.classList.add("cell-final-select");
+        }
+        return;
+    }
+    if (idx === stateData.i) td.classList.add("cell-i");
+    if (idx === stateData.prev) {
+        if (stateData.phase === "new-max") td.classList.add("cell-new-max");
+        else if (stateData.phase === "add-combo") td.classList.add("cell-add-combo");
+        else td.classList.add("cell-prev");
+    }
+}
+
+function createCell(txt, cls) {
+    let td = document.createElement("td");
+    td.className = cls;
+    td.innerText = txt;
+    return td;
+}
+
+function applyStepTrace(targetIdx) {
+    document.getElementById("log").innerHTML = "";
+    let activePtr = 0;
+    
+    while(activePtr <= targetIdx && activePtr < events.length) {
+        let isFinalNode = (activePtr === targetIdx);
+        let ev = events[activePtr++];
+
+        if (isFinalNode) {
+            document.getElementById("val-ptrs").innerText = ev.i !== -1 ? `i: ${ev.i}, prev: ${ev.prev !== -1 ? ev.prev : 'Ø'}` : "Tally Loop Phase";
+            document.getElementById("val-vals").innerText = (ev.i !== -1 && ev.prev !== -1) ? `nums[i]: ${ev.nums[ev.i]} | nums[prev]: ${ev.nums[ev.prev]}` : "-";
+            document.getElementById("val-maxl").innerText = `${ev.maxl}`;
+            
+            buildGridDOM(ev);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssLogClass = "";
+        if (ev.phase === "new-max") cssLogClass = "log-max";
+        else if (ev.phase === "add-combo") cssLogClass = "log-combo";
+        else if (ev.phase === "final") cssLogClass = "log-final";
+
+        log(ev.msg, cssLogClass);
+    }
+    ptr = targetIdx + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> • ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function nextStep() {
+    if (ptr >= events.length) { pause(); return; }
+    applyStepTrace(ptr);
+}
+
+function prevStep() {
+    pause();
+    if (ptr <= 1) { applyStepTrace(0); return; }
+    applyStepTrace(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) generateSimulation();
+    nextStep();
+    autoTimer = setInterval(nextStep, 550);
+}
+
+function pause() {
+    if(autoTimer) clearInterval(autoTimer);
+}
+
+window.onload = () => {
+    generateSimulation();
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 312 - Burst Balloons (Java Structure) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    
+        --bg-panel: #252526;   
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for optimal solution max updates */
+        --active: #ff9800;     /* Orange for current matrix cell dp[i][j] */
+        --neighbor: #2196f3;   /* Blue for dependent subproblems */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 540px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+        border-right: 2px solid #2d2d2d;
+    }
+
+    /* Right Panel (Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+        border: 1px solid var(--border);
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 11px; line-height: 1.45;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-line-numbers div { height: 16px; } 
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 11px; line-height: 1.45; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; height: 16px; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb; min-width: 80px;
+    }
+    .var-value { font-size: 15px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* Matrix Design */
+    .table-scroll { overflow: auto; max-width: 100%; padding-bottom: 5px; }
+    .dp-table { border-collapse: separate; border-spacing: 5px; font-family: Consolas, monospace; margin: 0 auto; }
+    .dp-cell {
+        width: 48px; height: 32px; border-radius: 4px; border: 1px solid #444; background: #1e1e1e;
+        text-align: center; font-weight: bold; font-size: 13px; transition: all 0.1s;
+    }
+    .dp-header-cell {
+        padding: 6px; background: #2d2d2d; font-size: 11px;
+        font-weight: bold; color: #aaa; text-align: center; border-radius: 4px;
+    }
+    
+    /* Interactive States styles */
+    .cell-active { border-color: var(--active) !important; color: var(--active) !important; background: rgba(255, 152, 0, 0.1) !important; box-shadow: 0 0 6px var(--active); }
+    .cell-dependent { border-color: var(--neighbor) !important; color: var(--neighbor) !important; background: rgba(33, 150, 243, 0.1) !important; }
+    .cell-match { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(76, 175, 80, 0.15) !important; }
+    .cell-invalid { background: #151515; opacity: 0.3; color: #444; }
+
+    /* Action Log Layout */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-max { color: var(--accent); font-weight: bold; }
+    .log-calc { color: #aaa; }
+    .log-final { color: #ffd54f; font-weight: bold; font-size: 14px; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Presets:</label>
+        <select id="testCases" onchange="loadPreset()">
+            <option value="tc1">1. Normal Combo [3, 1, 5, 8] -> Ans: 167</option>
+            <option value="tc2">2. Minimal [1, 5] -> Ans: 10</option>
+            <option value="tc3">3. Flat Same [2, 2, 2] -> Ans: 20</option>
+        </select>
+    </div>
+    <div class="header-group">
+        <label>Balloons (nums):</label>
+        <input id="arrayInput" type="text" style="width: 150px;" value="3, 1, 5, 8">
+    </div>
+    <button class="primary" onclick="generateSimulation()">Initialize DP Matrix</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">Java Bottom-Up Interval DP</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Interval Boundary Mechanics</h3>
+            <div class="footer-note">
+                • <strong>`a[i-1] * a[k] * a[j+1]`</strong>:<br>
+                Because balloon `k` is chosen as the <strong>last</strong> balloon to pop inside range `[i, j]`, everything else within that scope has vanished. Its real-time neighbors are the outside boundary guards `i-1` and `j+1`.
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Length (len)<div class="var-value" id="val-len">-</div></div>
+                <div class="var-box">Interval (i, j)<div class="var-value" id="val-ij">-</div></div>
+                <div class="var-box">Last Burst (k)<div class="var-value" id="val-k">-</div></div>
+                <div class="var-box">Calculation Formula<div class="var-value" id="val-formula" style="font-size:12px; color:#aaa; font-family: monospace;">-</div></div>
+                <div class="var-box">Current Max<div class="var-value" id="val-max" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <h3>Dynamic Programming 2D Table Matrix: dp[i][j]</h3>
+            <div class="table-scroll">
+                <table id="dpMatrixTable" class="dp-table"></table>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Step Analysis Logger</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const JAVA_CODE = [
+    "public int maxCoins(int[] nums) {",
+    "    int n = nums.length;",
+    "    int[] a = new int[n + 2];",
+    "    a[0] = a[n + 1] = 1;",
+    "    for (int i = 0; i < n; i++) a[i + 1] = nums[i];",
+    "    int[][] dp = new int[n + 2][n + 2];",
+    "    ",
+    "    for (int len = 1; len <= n; len++) {",
+    "        for (int i = 1; i + len - 1 <= n; i++) {",
+    "            int j = i + len - 1;",
+    "            for (int k = i; k <= j; k++) {",
+    "                int coins = dp[i][k - 1] + dp[k + 1][j] + a[i - 1] * a[k] * a[j + 1];",
+    "                dp[i][j] = Math.max(dp[i][j], coins);",
+    "            }",
+    "        }",
+    "    }",
+    "    return dp[1][n];",
+    "}"
+];
+
+const PRESETS = {
+    tc1: "3, 1, 5, 8",
+    tc2: "1, 5",
+    tc3: "2, 2, 2"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let originalNums = [], paddedNums = [];
+let nSize = 0;
+
+function renderCodeBlock() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div>${i + 1}</div>`).join('');
+    let rawText = JAVA_CODE.join('\n');
+    let highlighted = hljs.highlight(rawText, { language: 'java' }).value.split('\n');
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs java">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) element.classList.add("active-line");
+}
+
+function loadPreset() {
+    document.getElementById("arrayInput").value = PRESETS[document.getElementById("testCases").value];
+    generateSimulation();
+}
+
+function* burstBalloonsEngine(nums) {
+    let n = nums.length;
+    let a = [1, ...nums, 1];
+    let dp = Array(n + 2).fill(0).map(() => Array(n + 2).fill(0));
+
+    yield { line: 5, msg: `Initialized array 'a' with boundary paddings: [${a.join(', ')}]. Allocated 2D DP matrix.`, dp: dp.map(r => [...r]), len: 0, i: -1, j: -1, k: -1, formula: "", maxCoins: 0, phase: "init" };
+
+    for (let len = 1; len <= n; len++) {
+        for (let i = 1; i + len - 1 <= n; i++) {
+            let j = i + len - 1;
+            
+            yield { line: 9, msg: `Scanning interval window range [${i}, ${j}] with fixed length len = ${len}`, dp: dp.map(r => [...r]), len, i, j, k: -1, formula: "", maxCoins: dp[i][j], phase: "interval-start" };
+
+            for (let k = i; k <= j; k++) {
+                let leftSub = dp[i][k - 1];
+                let rightSub = dp[k + 1][j];
+                let productCoins = a[i - 1] * a[k] * a[j + 1];
+                let coins = leftSub + rightSub + productCoins;
+                
+                let isNewMax = (coins > dp[i][j]);
+                if (isNewMax) dp[i][j] = coins;
+
+                let formulaStr = `dp[${i}][${k-1}](${leftSub}) + dp[${k+1}][${j}](${rightSub}) + (${a[i-1]} * ${a[k]} * ${a[j+1]}) = ${coins}`;
+
+                yield { 
+                    line: 11, 
+                    msg: `Assume balloon k = ${k} (${a[k]}) is the LAST to pop in range [${i}, ${j}]. Branch value: ${coins}`, 
+                    dp: dp.map(r => [...r]), 
+                    len, i, j, k, 
+                    formula: formulaStr, 
+                    maxCoins: dp[i][j], 
+                    depLeft: {r: i, c: k - 1},
+                    depRight: {r: k + 1, c: j},
+                    phase: isNewMax ? "optimal-find" : "calc-loop" 
+                };
+            }
+            yield { line: 12, msg: `Window locking: Maximum coin yield for interval [${i}, ${j}] finalized as ${dp[i][j]}`, dp: dp.map(r => [...r]), len, i, j, k: -1, formula: "", maxCoins: dp[i][j], phase: "interval-end" };
+        }
+    }
+
+    yield { line: 15, msg: `DP complete! Answer resides at dp[1][${n}]: ${dp[1][n]} coins.`, dp: dp.map(r => [...r]), len: n, i: 1, j: n, k: -1, formula: "", maxCoins: dp[1][n], phase: "final" };
+}
+
+function generateSimulation() {
+    let rawStr = document.getElementById("arrayInput").value;
+    originalNums = rawStr.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    nSize = originalNums.length;
+    paddedNums = [1, ...originalNums, 1];
+
+    events = [];
+    ptr = 0;
+    pause();
+
+    const builder = burstBalloonsEngine(originalNums);
+    let nextResult = builder.next();
+    while(!nextResult.done) {
+        events.push(nextResult.value);
+        nextResult = builder.next();
+    }
+
+    document.getElementById("log").innerHTML = "";
+    applyStepTrace(0);
+}
+
+function buildGridDOM(stateData) {
+    const table = document.getElementById("dpMatrixTable");
+    table.innerHTML = "";
+
+    // Header label configuration
+    let hRow = document.createElement("tr");
+    hRow.appendChild(createCell("i \\ j", "dp-header-cell"));
+    for (let j = 0; j <= nSize + 1; j++) {
+        let label = (j === 0 || j === nSize + 1) ? `a[${j}] (1)` : `j=${j} (${originalNums[j-1]})`;
+        hRow.appendChild(createCell(label, "dp-header-cell"));
+    }
+    table.appendChild(hRow);
+
+    for (let i = 0; i <= nSize + 1; i++) {
+        let row = document.createElement("tr");
+        let label = (i === 0 || i === nSize + 1) ? `a[${i}] (1)` : `i=${i} (${originalNums[i-1]})`;
+        row.appendChild(createCell(label, "dp-header-cell"));
+
+        for (let j = 0; j <= nSize + 1; j++) {
+            let td = createCell(stateData.dp[i][j], "dp-cell");
+            
+            if (i > j && i <= nSize && j >= 1) {
+                td.classList.add("cell-invalid");
+            }
+            if (i === 0 || j === 0 || i === nSize + 1 || j === nSize + 1) {
+                td.classList.add("cell-invalid");
+            }
+
+            applyStyleHighlight(td, i, j, stateData);
+            row.appendChild(td);
+        }
+        table.appendChild(row);
+    }
+}
+
+function applyStyleHighlight(td, i, j, stateData) {
+    if (stateData.phase === "final") {
+        if (i === 1 && j === nSize) td.classList.add("cell-match");
+        return;
+    }
+    
+    if (i === stateData.i && j === stateData.j) {
+        if (stateData.phase === "optimal-find" || stateData.phase === "interval-end") {
+            td.classList.add("cell-match");
+        } else {
+            td.classList.add("cell-active");
+        }
+    }
+
+    if (stateData.phase === "calc-loop" || stateData.phase === "optimal-find") {
+        if ((i === stateData.depLeft.r && j === stateData.depLeft.c) || 
+            (i === stateData.depRight.r && j === stateData.depRight.c)) {
+            td.classList.add("cell-dependent");
+        }
+    }
+}
+
+function createCell(txt, cls) {
+    let td = document.createElement("td");
+    td.className = cls;
+    td.innerText = txt;
+    return td;
+}
+
+function applyStepTrace(targetIdx) {
+    document.getElementById("log").innerHTML = "";
+    let activePtr = 0;
+    
+    while(activePtr <= targetIdx && activePtr < events.length) {
+        let isFinalNode = (activePtr === targetIdx);
+        let ev = events[activePtr++];
+
+        if (isFinalNode) {
+            document.getElementById("val-len").innerText = ev.len !== 0 ? ev.len : "-";
+            document.getElementById("val-ij").innerText = ev.i !== -1 ? `i: ${ev.i}, j: ${ev.j}` : "-";
+            document.getElementById("val-k").innerText = ev.k !== -1 ? `Index k = ${ev.k} (${paddedNums[ev.k]})` : "-";
+            document.getElementById("val-formula").innerText = ev.formula !== "" ? ev.formula : "-";
+            document.getElementById("val-max").innerText = ev.maxCoins;
+            
+            buildGridDOM(ev);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssLogClass = "";
+        if (ev.phase === "optimal-find") cssLogClass = "log-max";
+        else if (ev.phase === "calc-loop") cssLogClass = "log-calc";
+        else if (ev.phase === "final") cssLogClass = "log-final";
+
+        log(ev.msg, cssLogClass);
+    }
+    ptr = targetIdx + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> • ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function nextStep() {
+    if (ptr >= events.length) { pause(); return; }
+    applyStepTrace(ptr);
+}
+
+function prevStep() {
+    pause();
+    if (ptr <= 1) { applyStepTrace(0); return; }
+    applyStepTrace(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) generateSimulation();
+    nextStep();
+    autoTimer = setInterval(nextStep, 600);
+}
+
+function pause() {
+    if(autoTimer) clearInterval(autoTimer);
+}
+
+window.onload = () => {
+    generateSimulation();
+};
+</script>
+</body>
+</html>

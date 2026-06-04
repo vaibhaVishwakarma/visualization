@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 208 - Implement Trie Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    
+        --bg-panel: #252526;   
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for successfully matched string paths */
+        --active: #ff9800;     /* Orange for current processing character pointer */
+        --flag-true: #e91e63;   /* Pink/Red for terminal word flag markers */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 530px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+        border-right: 2px solid #2d2d2d;
+    }
+
+    /* Right Panel (Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+        border: 1px solid var(--border);
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 11px; line-height: 1.45;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-line-numbers div { height: 16px; } 
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 11px; line-height: 1.45; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; height: 16px; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb; min-width: 100px;
+    }
+    .var-value { font-size: 16px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* Canvas Architecture Layout */
+    .canvas-container {
+        position: relative; width: 100%; height: 360px; background: #1a1a1a;
+        border-radius: 6px; border: 1px solid #333; overflow: auto;
+    }
+    canvas { display: block; background: #1a1a1a; margin: 0 auto; }
+
+    /* Action Log Layout */
+    .log {
+        height: 110px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-fail { color: #ff5252; font-weight: bold; }
+    .log-action { color: #2196f3; font-weight: bold; }
+    .log-calc { color: #aaa; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>String Word / Prefix:</label>
+        <input id="stringInput" type="text" style="width: 130px;" value="apple">
+    </div>
+    <button class="primary" onclick="triggerAction('insert')">Insert Word</button>
+    <button onclick="triggerAction('search')" style="border-color: var(--accent);">Search Word</button>
+    <button onclick="triggerAction('startsWith')" style="border-color: #2196f3;">Starts With Prefix</button>
+    <button onclick="resetTrie()" style="color: #ff5252; border-color: #551a1a; margin-left: auto;">Reset Tree</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">C++ Prefix Tree Architecture</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Trie State Indicators</h3>
+            <div class="footer-note">
+                • <strong style="color: var(--flag-true)">Pink Nodes (flag = true)</strong>: Identifies terminal locations where a full word concludes.<br>
+                • <strong style="color: var(--active)">Orange Outlines</strong>: Highlights the exact real-time active pointer trace (`ptr`) evaluating characters.
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="playFlow()" style="background:#4caf50; color:white; font-weight:bold;" id="playBtn">▶ Play Animation</button>
+            <button onclick="pauseFlow()">⏸ Pause</button>
+            <button onclick="stepForward()">⏭ Single Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Active Method<div class="var-value" id="val-method" style="color:#2196f3;">None</div></div>
+                <div class="var-box">Character Index (i)<div class="var-value" id="val-idx">-</div></div>
+                <div class="var-box">Character / Key Value<div class="var-value" id="val-char">-</div></div>
+                <div class="var-box">Boolean Return Result<div class="var-value" id="val-return">-</div></div>
+            </div>
+
+            <h3>Interactive 2D Trie Branch Diagram Map</h3>
+            <div class="canvas-container" id="canvasFrame">
+                <canvas id="trieCanvas" width="800" height="340"></canvas>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Execution Action Tracker</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CPP_CODE = [
+    "struct Node {",
+    "    Node* links[26];",
+    "    bool flag = false;",
+    "    Node* put(char c) {",
+    "        if (links[c - 'a'] != nullptr) return links[c - 'a'];",
+    "        return links[c - 'a'] = new Node();",
+    "    }",
+    "    Node* getKey(char c) { return links[c - 'a']; }",
+    "    void setEnd() { flag = true; }",
+    "};",
+    "",
+    "class Trie {",
+    "private:",
+    "    Node* root;",
+    "public:",
+    "    Trie() { root = new Node(); }",
+    "    void insert(string word) {",
+    "        Node* ptr = root;",
+    "        for (int i = 0; i < word.size(); i++) {",
+    "            ptr = ptr->put(word[i]);",
+    "        }",
+    "        ptr->setEnd();",
+    "    }",
+    "    bool search(string word) {",
+    "        Node* ptr = root;",
+    "        for (int i = 0; i < word.size(); i++)",
+    "            if ((ptr = ptr->getKey(word[i])) == nullptr)",
+    "                return false;",
+    "        return ptr->flag;",
+    "    }",
+    "    bool startsWith(string prefix) {",
+    "        Node* ptr = root;",
+    "        for (int i = 0; i < prefix.size(); i++)",
+    "            if ((ptr = ptr->getKey(prefix[i])) == nullptr)",
+    "                return false;",
+    "        return true;",
+    "    }",
+    "};"
+];
+
+// Backend Structural Representation
+class VisualTrieNode {
+    constructor(id) {
+        this.id = id;
+        this.links = {}; 
+        this.flag = false;
+        this.x = 0;
+        this.y = 0;
+    }
+}
+
+let trieRoot = new VisualTrieNode(0);
+let nodeCounter = 1;
+
+let animationEvents = [], animationPtr = 0, autoTimer = null;
+
+function renderCodeBlock() {
+    let lineNumbers = CPP_CODE.map((_, i) => `<div>${i + 1}</div>`).join('');
+    let rawText = CPP_CODE.join('\n');
+    let highlighted = hljs.highlight(rawText, { language: 'cpp' }).value.split('\n');
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs cpp">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) element.classList.add("active-line");
+}
+
+function resetTrie() {
+    trieRoot = new VisualTrieNode(0);
+    nodeCounter = 1;
+    animationEvents = [];
+    animationPtr = 0;
+    pauseFlow();
+    document.getElementById("log").innerHTML = "";
+    document.getElementById("val-method").innerText = "None";
+    document.getElementById("val-idx").innerText = "-";
+    document.getElementById("val-char").innerText = "-";
+    document.getElementById("val-return").innerText = "-";
+    drawTree(-1);
+    log("Trie Tree architecture completely flushed clean.", "log-action");
+}
+
+// SIMULATION GENERATION ENGINES
+function buildInsertSequence(word) {
+    let currentEvents = [];
+    let ptrNode = trieRoot;
+    currentEvents.push({ line: 17, msg: `Initializing word insertion process for "${word}"`, method: "insert", idx: "-", char: "-", ret: "-", activeNodeId: ptrNode.id });
+
+    for(let i = 0; i < word.length; i++) {
+        let ch = word[i];
+        currentEvents.push({ line: 18, msg: `Loop check: iteration i = ${i} tracking letter Key: '${ch}'`, method: "insert", idx: i, char: ch, ret: "-", activeNodeId: ptrNode.id });
+        
+        if(!ptrNode.links[ch]) {
+            ptrNode.links[ch] = new VisualTrieNode(nodeCounter++);
+            currentEvents.push({ line: 19, msg: `Branch miss! Character node link mapping for '${ch}' not found. Spawning new dynamic node reference block via put().`, method: "insert", idx: i, char: ch, ret: "Allocated", activeNodeId: ptrNode.id });
+        } else {
+            currentEvents.push({ line: 19, msg: `Branch hit! Reusing matching path edge link key link for character '${ch}'`, method: "insert", idx: i, char: ch, ret: "Found Link", activeNodeId: ptrNode.id });
+        }
+        ptrNode = ptrNode.links[ch];
+    }
+    ptrNode.flag = true;
+    currentEvents.push({ line: 21, msg: `Loop exit. Flipped terminal node indicator flag at node ID: N${ptrNode.id} to TRUE via setEnd(). Word "${word}" successfully mapped.`, method: "insert", idx: "End", char: "-", ret: "Void", activeNodeId: ptrNode.id });
+    return currentEvents;
+}
+
+function buildSearchSequence(word) {
+    let currentEvents = [];
+    let ptrNode = trieRoot;
+    currentEvents.push({ line: 24, msg: `Starting linear target validation search query for word: "${word}"`, method: "search", idx: "-", char: "-", ret: "-", activeNodeId: ptrNode.id });
+
+    for(let i = 0; i < word.length; i++) {
+        let ch = word[i];
+        currentEvents.push({ line: 25, msg: `Verifying path tracking key sequence index [${i}]: '${ch}'`, method: "search", idx: i, char: ch, ret: "-", activeNodeId: ptrNode.id });
+        
+        if(!ptrNode.links[ch]) {
+            currentEvents.push({ line: 26, msg: `Search dead end! Key branch mapping link for character '${ch}' returned nullptr via getKey(). String validation fails.`, method: "search", idx: i, char: ch, ret: "false", activeNodeId: null, phase: "fail" });
+            return currentEvents;
+        }
+        ptrNode = ptrNode.links[ch];
+    }
+
+    let resultFlag = ptrNode.flag;
+    currentEvents.push({ 
+        line: 28, 
+        msg: `Character sequences fully satisfied. Checking terminal flag state marker. Value found: ${resultFlag}`, 
+        method: "search", idx: "End", char: "-", 
+        ret: resultFlag ? "true" : "false", 
+        activeNodeId: ptrNode.id,
+        phase: resultFlag ? "success" : "fail"
+    });
+    return currentEvents;
+}
+
+function buildStartsWithSequence(prefix) {
+    let currentEvents = [];
+    let ptrNode = trieRoot;
+    currentEvents.push({ line: 31, msg: `Starting prefix routing validation search query for segment: "${prefix}"`, method: "startsWith", idx: "-", char: "-", ret: "-", activeNodeId: ptrNode.id });
+
+    for(let i = 0; i < prefix.length; i++) {
+        let ch = prefix[i];
+        currentEvents.push({ line: 32, msg: `Verifying prefix path character index [${i}]: '${ch}'`, method: "startsWith", idx: i, char: ch, ret: "-", activeNodeId: ptrNode.id });
+        
+        if(!ptrNode.links[ch]) {
+            currentEvents.push({ line: 33, msg: `Prefix validation match broken. No existing keys route through branch pointer character '${ch}'`, method: "startsWith", idx: i, char: ch, ret: "false", activeNodeId: null, phase: "fail" });
+            return currentEvents;
+        }
+        ptrNode = ptrNode.links[ch];
+    }
+
+    currentEvents.push({ line: 35, msg: `Prefix sequence path verified perfectly. Valid active root branch trace confirmed. Returns true.`, method: "startsWith", idx: "End", char: "-", ret: "true", activeNodeId: ptrNode.id, phase: "success" });
+    return currentEvents;
+}
+
+function triggerAction(actionType) {
+    let wordInput = document.getElementById("stringInput").value.trim().toLowerCase();
+    if(!wordInput.match(/^[a-z]+$/)) {
+        alert("Please specify clean lowercase alphabetic strings only [a-z].");
+        return;
+    }
+
+    pauseFlow();
+    animationEvents = [];
+    animationPtr = 0;
+
+    if(actionType === "insert") {
+        animationEvents = buildInsertSequence(wordInput);
+    } else if(actionType === "search") {
+        animationEvents = buildSearchSequence(wordInput);
+    } else if(actionType === "startsWith") {
+        animationEvents = buildStartsWithSequence(wordInput);
+    }
+
+    executeTraceStep(0);
+    playFlow();
+}
+
+function assignLayoutCoordinates(node, depth, minX, maxX) {
+    node.y = 45 + depth * 60;
+    node.x = (minX + maxX) / 2;
+
+    let keys = Object.keys(node.links).sort();
+    if (keys.length === 0) return;
+
+    let totalSegmentWidth = (maxX - minX);
+    let slice = totalSegmentWidth / keys.length;
+
+    keys.forEach((key, index) => {
+        let localMinX = minX + index * slice;
+        let localMaxX = localMinX + slice;
+        assignLayoutCoordinates(node.links[key], depth + 1, localMinX, localMaxX);
+    });
+}
+
+function drawTree(activeId) {
+    const canvas = document.getElementById("trieCanvas");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    assignLayoutCoordinates(trieRoot, 0, 20, canvas.width - 20);
+
+    // Initial pass: Draw connector branches lines
+    function drawConnections(node) {
+        Object.keys(node.links).forEach(key => {
+            let child = node.links[key];
+            ctx.beginPath();
+            ctx.moveTo(node.x, node.y);
+            ctx.lineTo(child.x, child.y);
+            ctx.strokeStyle = "#444444";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Render text trace coordinates safely
+            let midX = (node.x + child.x) / 2;
+            let midY = (node.y + child.y) / 2;
+            ctx.fillStyle = "#2196f3";
+            ctx.font = "bold 13px 'Segoe UI', monospace";
+            ctx.fillText(key, midX - 4, midY - 6);
+            
+            drawConnections(child);
+        });
+    }
+    drawConnections(trieRoot);
+
+    // Secondary pass: Overlay circles nodes blocks
+    function drawNodes(node) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 16, 0, 2 * Math.PI);
+        
+        if(node.flag) {
+            ctx.fillStyle = "#3a1324"; 
+            ctx.fill();
+            ctx.strokeStyle = varColorStyle("--flag-true");
+        } else {
+            ctx.fillStyle = "#252526";
+            ctx.fill();
+            ctx.strokeStyle = "#666";
+        }
+
+        ctx.lineWidth = 2;
+        if(node.id === activeId) {
+            ctx.strokeStyle = varColorStyle("--active");
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = varColorStyle("--active");
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0; 
+
+        ctx.fillStyle = node.id === 0 ? "#aaa" : "#fff";
+        ctx.font = "11px Consolas, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(node.id === 0 ? "root" : `N${node.id}`, node.x, node.y);
+
+        Object.keys(node.links).forEach(k => drawNodes(node.links[k]));
+    }
+    drawNodes(trieRoot);
+}
+
+function varColorStyle(varName) {
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function executeTraceStep(targetIndex) {
+    let currentLogContainer = document.getElementById("log");
+    currentLogContainer.innerHTML = "";
+    
+    let stepCountIdx = 0;
+    while(stepCountIdx <= targetIndex && stepCountIdx < animationEvents.length) {
+        let isFinalLineNode = (stepCountIdx === targetIndex);
+        let ev = animationEvents[stepCountIdx++];
+
+        if (isFinalLineNode) {
+            document.getElementById("val-method").innerText = ev.method;
+            document.getElementById("val-idx").innerText = ev.idx;
+            document.getElementById("val-char").innerText = ev.char;
+            document.getElementById("val-return").innerText = ev.ret;
+            
+            drawTree(ev.activeNodeId);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssStyleClass = "log-calc";
+        if(ev.phase === "success") cssStyleClass = "log-success";
+        else if (ev.phase === "fail") cssStyleClass = "log-fail";
+        else if (ev.idx === "End") cssStyleClass = "log-action";
+
+        log(ev.msg, cssStyleClass);
+    }
+    animationPtr = targetIndex + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> • ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function stepForward() {
+    if (animationPtr >= animationEvents.length) { pauseFlow(); return; }
+    executeTraceStep(animationPtr);
+}
+
+function playFlow() {
+    pauseFlow();
+    if(animationPtr >= animationEvents.length) return;
+    document.getElementById("playBtn").innerText = "⚡ Running";
+    stepForward();
+    autoTimer = setInterval(stepForward, 900);
+}
+
+function pauseFlow() {
+    if(autoTimer) clearInterval(autoTimer);
+    document.getElementById("playBtn").innerText = "▶ Play Animation";
+}
+
+window.onload = () => {
+    drawTree(-1);
+};
+</script>
+</body>
+</html>

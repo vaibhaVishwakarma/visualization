@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 123 - Best Time to Buy and Sell Stock III Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    
+        --bg-panel: #252526;   
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for sells / profit spikes */
+        --fail: #f44336;       /* Red for buys / capital drops */
+        --active: #ff9800;     /* Orange for current step calculation */
+        --neighbor: #2196f3;   /* Blue for state tracking */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Grid Splitter */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code View) */
+    .left-panel {
+        width: 540px; min-width: 300px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+        border-right: 2px solid #2d2d2d;
+    }
+
+    /* Right Panel (Visualization Workspace) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Container Setup */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; display: flex; min-height: 250px;
+        border: 1px solid var(--border);
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 8px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 11px; line-height: 1.45;
+        text-align: right; min-width: 25px; flex-shrink: 0;
+    }
+    .code-line-numbers div { height: 16px; } 
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 11px; line-height: 1.45; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-left: 3px solid transparent; display: block; height: 16px; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Data Variable Badges */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 12px; color: #bbb; min-width: 100px;
+    }
+    .var-value { font-size: 16px; font-weight: bold; color: var(--active); margin-top: 4px; }
+
+    /* 2D DP Table Visuals */
+    .table-scroll { overflow: auto; max-width: 100%; padding-bottom: 5px; }
+    .dp-table { border-collapse: separate; border-spacing: 4px; font-family: Consolas, monospace; margin: 0 auto; width: 100%; }
+    .dp-cell {
+        padding: 8px; border-radius: 4px; border: 1px solid #444; background: #1e1e1e;
+        text-align: center; font-weight: bold; font-size: 13px; color: #d4d4d4; transition: all 0.15s;
+    }
+    .dp-header-cell {
+        padding: 8px; background: #2d2d2d; font-size: 12px;
+        font-weight: bold; color: #aaa; text-align: center; border-radius: 4px;
+    }
+    
+    /* Cell Mutation Highlights */
+    .cell-eval { border-color: var(--active) !important; box-shadow: 0 0 8px var(--active); color: var(--active); }
+    .cell-active-row { background: rgba(255, 152, 0, 0.05); }
+
+    /* Action Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-buy { color: var(--fail); }
+    .log-sell { color: var(--accent); font-weight: bold; }
+    .log-final { color: #ffd54f; font-weight: bold; font-size: 14px; }
+    
+    .footer-note { font-size: 12px; color: #bbb; line-height: 1.4; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--neighbor); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Presets:</label>
+        <select id="testCases" onchange="loadPreset()">
+            <option value="tc1">1. Double Peak [3, 3, 5, 0, 0, 3, 1, 4] -> Ans: 6</option>
+            <option value="tc2">2. Single Ascent [1, 2, 3, 4, 5] -> Ans: 4</option>
+            <option value="tc3">3. Strict Losses [7, 6, 4, 3, 1] -> Ans: 0</option>
+        </select>
+    </div>
+    <div class="header-group">
+        <label>Prices Timeline:</label>
+        <input id="arrayInput" type="text" style="width: 200px;" value="3,3,5,0,0,3,1,4">
+    </div>
+    <button class="primary" onclick="generateSimulation()">Initialize Analysis</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">Python State Tree Memoization</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3>Transaction State Transitions</h3>
+            <div class="footer-note">
+                • <strong>Buy Node State (buy_enable=True)</strong>:<br>
+                &nbsp;&nbsp;<code>max(-prices[i] + f(i+1, False, cap), f(i+1, True, cap))</code><br>
+                • <strong>Sell Node State (buy_enable=False)</strong>:<br>
+                &nbsp;&nbsp;<code>max(prices[i] + f(i+1, True, cap-1), f(i+1, False, cap))</code>
+                <hr style="border-color:#333; margin: 6px 0;">
+                The parallel tracking grid translates these choices dynamically to evaluate peak profits over at most 2 transactions.
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Day Index (idx)<div class="var-value" id="val-idx">-</div></div>
+                <div class="var-box">Price today<div class="var-value" id="val-price">-</div></div>
+                <div class="var-box">Max Extracted Profit<div class="var-value" id="val-profit" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <h3>State Machine Grid Map (At Most 2 Transactions)</h3>
+            <div class="table-scroll">
+                <table id="dpMatrixTable" class="dp-table"></table>
+            </div>
+        </div>
+
+        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+            <h3>Step Analysis Logger</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const PYTHON_CODE = [
+    "class Solution:",
+    "    def maxProfit(self, prices: List[int]) -> int:",
+    "        n = len(prices)",
+    "        memo = dict()",
+    "        def f(idx, buy_enable=True, cap=2):",
+    "            if cap == 0 or idx == n: return 0",
+    "            if (idx, buy_enable, cap) in memo: ",
+    "                return memo[(idx, buy_enable, cap)]",
+    "            ",
+    "            if(buy_enable):",
+    "                memo[(idx, buy_enable, cap)] = max(",
+    "                    -prices[idx] + f(idx+1, False, cap),",
+    "                    f(idx+1, True, cap)",
+    "                )",
+    "            else:",
+    "                memo[(idx, buy_enable, cap)] = max(",
+    "                    prices[idx] + f(idx+1, True, cap-1),",
+    "                    f(idx+1, False, cap)",
+    "                )",
+    "            return memo[(idx, buy_enable, cap)]",
+    "        return f(0)"
+];
+
+const PRESETS = {
+    tc1: "3,3,5,0,0,3,1,4",
+    tc2: "1,2,3,4,5",
+    tc3: "7,6,4,3,1"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+let globalPrices = [];
+
+function renderCodeBlock() {
+    let lineNumbers = PYTHON_CODE.map((_, i) => `<div>${i + 1}</div>`).join('');
+    let rawText = PYTHON_CODE.join('\n');
+    let highlighted = hljs.highlight(rawText, { language: 'python' }).value.split('\n');
+    let linesHtml = highlighted.map((l, i) => `<div class='code-line' id='line${i}'>${l || ' '}</div>`).join('');
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'><pre><code class="hljs python">${linesHtml}</code></pre></div></div>`;
+}
+renderCodeBlock();
+
+function setLineHighlight(idx) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    let element = document.getElementById("line" + idx);
+    if(element) element.classList.add("active-line");
+}
+
+function loadPreset() {
+    document.getElementById("arrayInput").value = PRESETS[document.getElementById("testCases").value];
+    generateSimulation();
+}
+
+function* stockCapSimulationEngine(prices) {
+    let n = prices.length;
+    if (n === 0) return;
+
+    // Equivalent space execution state for tracking state machine transitions bottom up
+    let history = [];
+    let b1 = -prices[0], s1 = 0, b2 = -prices[0], s2 = 0;
+    
+    history.push({ idx: 0, price: prices[0], b1, s1, b2, s2 });
+    yield { line: 5, msg: `Baseline initial values established on Day 0. Buy balances down to -${prices[0]}.`, history: [...history], curIdx: 0 };
+
+    for (let i = 1; i < n; i++) {
+        let p = prices[i];
+        
+        let old_b1 = b1, old_s1 = s1, old_b2 = b2, old_s2 = s2;
+        
+        // Simulating the structural logic branches from the top-down choices
+        b1 = Math.max(old_b1, -p);
+        s1 = Math.max(old_s1, old_b1 + p);
+        b2 = Math.max(old_b2, old_s1 - p);
+        s2 = Math.max(old_s2, old_b2 + p);
+        
+        history.push({ idx: i, price: p, b1, s1, b2, s2 });
+        
+        yield { line: 10, msg: `Day ${i} Evaluation (Price: ${p}). Simulating decisions...`, history: [...history], curIdx: i };
+        
+        if (b1 !== old_b1 || b2 !== old_b2) {
+            yield { line: 11, msg: `Buy slots updated. Opportunities tracked to anchor low valleys.`, history: [...history], curIdx: i, type: "buy" };
+        }
+        if (s1 !== old_s1 || s2 !== old_s2) {
+            yield { line: 16, msg: `Profit spikes observed! Transaction slots elevated (S1: ${s1}, S2: ${s2}).`, history: [...history], curIdx: i, type: "sell" };
+        }
+    }
+
+    yield { line: 21, msg: `Full sequence traversed. Maximum net yield extracted over 2 capped slots: ${s2}`, history: [...history], curIdx: n - 1, type: "final" };
+}
+
+function generateSimulation() {
+    let rawStr = document.getElementById("arrayInput").value;
+    globalPrices = rawStr.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    
+    events = [];
+    ptr = 0;
+    pause();
+
+    const builder = stockCapSimulationEngine(globalPrices);
+    let nextResult = builder.next();
+    while(!nextResult.done) {
+        events.push(nextResult.value);
+        nextResult = builder.next();
+    }
+
+    document.getElementById("log").innerHTML = "";
+    applyStepTrace(0);
+}
+
+function buildGridDOM(stateData) {
+    const table = document.getElementById("dpMatrixTable");
+    table.innerHTML = "";
+
+    let headerRow = document.createElement("tr");
+    headerRow.appendChild(createCell("Day", "dp-header-cell"));
+    headerRow.appendChild(createCell("Price", "dp-header-cell"));
+    headerRow.appendChild(createCell("Buy 1 Balance", "dp-header-cell"));
+    headerRow.appendChild(createCell("Sell 1 Profit", "dp-header-cell"));
+    headerRow.appendChild(createCell("Buy 2 Balance", "dp-header-cell"));
+    headerRow.appendChild(createCell("Sell 2 Profit", "dp-header-cell"));
+    table.appendChild(headerRow);
+
+    stateData.history.forEach((row) => {
+        let rowObj = document.createElement("tr");
+        if(row.idx === stateData.curIdx) rowObj.className = "cell-active-row";
+
+        rowObj.appendChild(createCell(`Day ${row.idx}`, "dp-cell"));
+        let pCell = createCell(row.price, "dp-cell");
+        if(row.idx === stateData.curIdx) pCell.classList.add("cell-eval");
+        rowObj.appendChild(pCell);
+
+        rowObj.appendChild(createCell(row.b1, "dp-cell"));
+        rowObj.appendChild(createCell(row.s1, "dp-cell"));
+        rowObj.appendChild(createCell(row.b2, "dp-cell"));
+        rowObj.appendChild(createCell(row.s2, "dp-cell"));
+
+        table.appendChild(rowObj);
+    });
+}
+
+function createCell(txt, cls) {
+    let td = document.createElement("td");
+    td.className = cls;
+    td.innerText = txt;
+    return td;
+}
+
+function applyStepTrace(targetIdx) {
+    document.getElementById("log").innerHTML = "";
+    let activePtr = 0;
+    
+    while(activePtr <= targetIdx && activePtr < events.length) {
+        let isFinalNode = (activePtr === targetIdx);
+        let ev = events[activePtr++];
+
+        if (isFinalNode) {
+            let activeRow = ev.history[ev.curIdx];
+            document.getElementById("val-idx").innerText = ev.curIdx;
+            document.getElementById("val-price").innerText = activeRow ? activeRow.price : "-";
+            document.getElementById("val-profit").innerText = activeRow ? activeRow.s2 : "-";
+            
+            buildGridDOM(ev);
+            if (ev.line !== undefined) setLineHighlight(ev.line);
+        }
+
+        let cssLogClass = "";
+        if (ev.type === "buy") cssLogClass = "log-buy";
+        else if (ev.type === "sell") cssLogClass = "log-sell";
+        else if (ev.type === "final") cssLogClass = "log-final";
+
+        log(ev.msg, cssLogClass);
+    }
+    ptr = targetIdx + 1;
+}
+
+function log(msg, styleClass) {
+    const logger = document.getElementById("log");
+    logger.innerHTML += `<div class="${styleClass}"> • ${msg}</div>`;
+    logger.scrollTop = logger.scrollHeight;
+}
+
+function nextStep() {
+    if (ptr >= events.length) { pause(); return; }
+    applyStepTrace(ptr);
+}
+
+function prevStep() {
+    pause();
+    if (ptr <= 1) { applyStepTrace(0); return; }
+    applyStepTrace(ptr - 2);
+}
+
+function play() {
+    pause();
+    if (ptr >= events.length) generateSimulation();
+    nextStep();
+    autoTimer = setInterval(nextStep, 600);
+}
+
+function pause() {
+    if(autoTimer) clearInterval(autoTimer);
+}
+
+window.onload = () => {
+    generateSimulation();
+};
+</script>
+</body>
+</html>
