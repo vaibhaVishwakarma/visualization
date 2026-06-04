@@ -91,10 +91,48 @@ for file in html_files:
 
 
 # ---------------------------------------------------------
+# UI Helper Functions
+# ---------------------------------------------------------
+
+def topic_id(name):
+    return (
+        "topic-" +
+        name.lower()
+            .replace("_", "-")
+            .replace(" ", "-")
+    )
+
+
+def build_topic_nav(tree):
+
+    html = """
+    <div class="topic-nav">
+    """
+
+    for topic in sorted(
+        k for k in tree.keys()
+        if k != "__files__"
+    ):
+
+        html += f"""
+        <a class="topic-card"
+           href="#{topic_id(topic)}">
+            {escape(topic.replace('_',' ').title())}
+        </a>
+        """
+
+    html += """
+    </div>
+    """
+
+    return html
+
+
+# ---------------------------------------------------------
 # Render recursive folder structure
 # ---------------------------------------------------------
 
-def render_node(node, level=2):
+def render_node(node, level=0):
 
     html = ""
 
@@ -112,13 +150,22 @@ def render_node(node, level=2):
 
     for folder in folders:
 
-        heading = min(level, 6)
+        indent = level * 24
+
+        anchor = (
+            topic_id(folder)
+            if level == 0
+            else ""
+        )
 
         html += f"""
-        <section class="topic">
-            <h{heading}>
+        <div class="folder-block"
+             style="margin-left:{indent}px">
+
+            <div class="folder-header"
+                 id="{anchor}">
                 {escape(folder.replace('_',' ').title())}
-            </h{heading}>
+            </div>
         """
 
         html += render_node(
@@ -127,7 +174,7 @@ def render_node(node, level=2):
         )
 
         html += """
-        </section>
+        </div>
         """
 
     if files:
@@ -140,18 +187,24 @@ def render_node(node, level=2):
 
             rel = file.relative_to(ROOT).as_posix()
 
+            file_id = ids[rel]
+
+            title = escape(
+                get_title(file)
+            )
+
             html += f"""
             <a class="card"
                href="{rel}"
-               data-id="{ids[rel]}">
+               data-id="{file_id}">
 
-                <div class="num">
-                    #{ids[rel]}
-                </div>
+                <span class="num">
+                    #{file_id}
+                </span>
 
-                <div class="title">
-                    {escape(get_title(file))}
-                </div>
+                <span class="title">
+                    {title}
+                </span>
 
             </a>
             """
@@ -179,99 +232,213 @@ html = f"""
 <title>Algorithm Visualizations</title>
 
 <style>
-
-* {{
+*{{
     box-sizing:border-box;
 }}
 
-body {{
-    font-family:Arial, sans-serif;
-    max-width:1500px;
+html{{
+    scroll-behavior:smooth;
+}}
+
+body{{
+    font-family:Arial,sans-serif;
+    max-width:1600px;
     margin:auto;
-    padding:30px;
+    padding:24px;
     background:#fafafa;
 }}
 
-h1 {{
+h1{{
     text-align:center;
+    margin-bottom:12px;
+}}
+
+#progress{{
+    text-align:center;
+    font-weight:600;
+    margin-bottom:12px;
+}}
+
+.progress-wrap{{
+    height:10px;
+    border-radius:999px;
+    overflow:hidden;
+    background:#e5e7eb;
+    margin-bottom:25px;
+}}
+
+#progressBar{{
+    height:100%;
+    width:0%;
+    background:#2563eb;
+    transition:.25s;
+}}
+
+/* -------------------------- */
+/* sticky topic navigation */
+/* -------------------------- */
+
+.topic-nav{{
+
+    position:sticky;
+    top:0;
+
+    z-index:100;
+
+    display:flex;
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    padding:12px 0;
+
+    background:#fafafa;
+
+    margin-bottom:25px;
+}}
+
+.topic-card{{
+
+    text-decoration:none;
+
+    color:#111;
+
+    background:white;
+
+    border:1px solid #ddd;
+
+    border-radius:12px;
+
+    padding:10px 18px;
+
+    font-weight:600;
+
+    transition:.15s;
+}}
+
+.topic-card:hover{{
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 4px 10px rgba(0,0,0,.08);
+}}
+
+/* -------------------------- */
+/* folders */
+/* -------------------------- */
+
+.folder-block{{
+    margin-top:12px;
+}}
+
+.folder-header{{
+
+    background:white;
+
+    border:1px solid #ddd;
+
+    border-radius:12px;
+
+    padding:12px 16px;
+
+    margin:16px 0 10px;
+
+    font-weight:700;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.04);
+}}
+
+/* -------------------------- */
+/* visualization list */
+/* -------------------------- */
+
+.cards{{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
     margin-bottom:10px;
 }}
 
-#progress {{
-    text-align:center;
-    margin-bottom:25px;
-    font-weight:600;
-    color:#444;
-}}
+.card{{
 
-.topic {{
-    margin-top:35px;
-}}
+    width:100%;
 
-h2,h3,h4,h5,h6 {{
-    border-bottom:2px solid #ddd;
-    padding-bottom:8px;
-}}
-
-.cards {{
     display:flex;
-    flex-wrap:wrap;
-    gap:14px;
-    margin-top:15px;
-}}
 
-.card {{
+    align-items:center;
 
-    width:300px;
+    gap:12px;
 
     text-decoration:none;
 
     background:white;
 
     border:1px solid #ddd;
-    border-radius:12px;
 
-    padding:16px;
+    border-radius:10px;
+
+    padding:10px 14px;
 
     transition:.15s;
 }}
 
-.card:hover {{
-    transform:translateY(-2px);
-    box-shadow:0 4px 12px rgba(0,0,0,.08);
+.card:hover{{
+
+    transform:translateX(4px);
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,.08);
 }}
 
-.num {{
-    font-size:12px;
+.num{{
+
+    min-width:60px;
+
     color:#666;
-    margin-bottom:8px;
+
+    font-size:14px;
 }}
 
-.title {{
-    font-size:16px;
-    line-height:1.4;
+.title{{
+
+    flex:1;
+
     color:#2563eb;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    font-size:15px;
 }}
 
-.card:visited .title {{
-    color:#551A8B;
-}}
+/* -------------------------- */
+/* visited */
+/* -------------------------- */
 
-/* localStorage based visited state */
+.card.visited{{
 
-.card.visited {{
     background:#faf5ff;
+
+    border-left:4px solid #7e22ce;
+
     border-color:#d8b4fe;
 }}
 
-.card.visited .title {{
+.card.visited .title{{
     color:#551A8B;
 }}
 
-.card.visited .num {{
+.card.visited .num{{
     color:#7e22ce;
 }}
-
 </style>
 
 </head>
@@ -284,10 +451,15 @@ h2,h3,h4,h5,h6 {{
 Loading...
 </div>
 
+<div class="progress-wrap">
+    <div id="progressBar"></div>
+</div>
+
+{build_topic_nav(tree)}
+
 {render_node(tree)}
 
 <script>
-
 const STORAGE_KEY =
     "algo_visualizations_visited";
 
@@ -318,15 +490,37 @@ cards.forEach(card => {{
             JSON.stringify([...visited])
         );
 
+        updateProgress();
+
     }});
 
 }});
 
-document.getElementById(
-    "progress"
-).textContent =
-    `Visited ${{visited.size}} / ${{cards.length}} visualizations`;
+function updateProgress(){{
 
+    const count =
+        visited.size;
+
+    const total =
+        cards.length;
+
+    const pct =
+        total === 0
+        ? 0
+        : count * 100 / total;
+
+    document
+        .getElementById("progress")
+        .textContent =
+        `Visited ${{count}} / ${{total}} visualizations`;
+
+    document
+        .getElementById("progressBar")
+        .style.width =
+        pct + "%";
+}}
+
+updateProgress();
 </script>
 
 </body>

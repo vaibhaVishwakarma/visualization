@@ -10,99 +10,213 @@
 <title>Algorithm Visualizations</title>
 
 <style>
-
-* {
+*{
     box-sizing:border-box;
 }
 
-body {
-    font-family:Arial, sans-serif;
-    max-width:1500px;
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    max-width:1600px;
     margin:auto;
-    padding:30px;
+    padding:24px;
     background:#fafafa;
 }
 
-h1 {
+h1{
     text-align:center;
+    margin-bottom:12px;
+}
+
+#progress{
+    text-align:center;
+    font-weight:600;
+    margin-bottom:12px;
+}
+
+.progress-wrap{
+    height:10px;
+    border-radius:999px;
+    overflow:hidden;
+    background:#e5e7eb;
+    margin-bottom:25px;
+}
+
+#progressBar{
+    height:100%;
+    width:0%;
+    background:#2563eb;
+    transition:.25s;
+}
+
+/* -------------------------- */
+/* sticky topic navigation */
+/* -------------------------- */
+
+.topic-nav{
+
+    position:sticky;
+    top:0;
+
+    z-index:100;
+
+    display:flex;
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    padding:12px 0;
+
+    background:#fafafa;
+
+    margin-bottom:25px;
+}
+
+.topic-card{
+
+    text-decoration:none;
+
+    color:#111;
+
+    background:white;
+
+    border:1px solid #ddd;
+
+    border-radius:12px;
+
+    padding:10px 18px;
+
+    font-weight:600;
+
+    transition:.15s;
+}
+
+.topic-card:hover{
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 4px 10px rgba(0,0,0,.08);
+}
+
+/* -------------------------- */
+/* folders */
+/* -------------------------- */
+
+.folder-block{
+    margin-top:12px;
+}
+
+.folder-header{
+
+    background:white;
+
+    border:1px solid #ddd;
+
+    border-radius:12px;
+
+    padding:12px 16px;
+
+    margin:16px 0 10px;
+
+    font-weight:700;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.04);
+}
+
+/* -------------------------- */
+/* visualization list */
+/* -------------------------- */
+
+.cards{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
     margin-bottom:10px;
 }
 
-#progress {
-    text-align:center;
-    margin-bottom:25px;
-    font-weight:600;
-    color:#444;
-}
+.card{
 
-.topic {
-    margin-top:35px;
-}
+    width:100%;
 
-h2,h3,h4,h5,h6 {
-    border-bottom:2px solid #ddd;
-    padding-bottom:8px;
-}
-
-.cards {
     display:flex;
-    flex-wrap:wrap;
-    gap:14px;
-    margin-top:15px;
-}
 
-.card {
+    align-items:center;
 
-    width:300px;
+    gap:12px;
 
     text-decoration:none;
 
     background:white;
 
     border:1px solid #ddd;
-    border-radius:12px;
 
-    padding:16px;
+    border-radius:10px;
+
+    padding:10px 14px;
 
     transition:.15s;
 }
 
-.card:hover {
-    transform:translateY(-2px);
-    box-shadow:0 4px 12px rgba(0,0,0,.08);
+.card:hover{
+
+    transform:translateX(4px);
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,.08);
 }
 
-.num {
-    font-size:12px;
+.num{
+
+    min-width:60px;
+
     color:#666;
-    margin-bottom:8px;
+
+    font-size:14px;
 }
 
-.title {
-    font-size:16px;
-    line-height:1.4;
+.title{
+
+    flex:1;
+
     color:#2563eb;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    font-size:15px;
 }
 
-.card:visited .title {
-    color:#551A8B;
-}
+/* -------------------------- */
+/* visited */
+/* -------------------------- */
 
-/* localStorage based visited state */
+.card.visited{
 
-.card.visited {
     background:#faf5ff;
+
+    border-left:4px solid #7e22ce;
+
     border-color:#d8b4fe;
 }
 
-.card.visited .title {
+.card.visited .title{
     color:#551A8B;
 }
 
-.card.visited .num {
+.card.visited .num{
     color:#7e22ce;
 }
-
 </style>
 
 </head>
@@ -115,16 +229,47 @@ h2,h3,h4,h5,h6 {
 Loading...
 </div>
 
+<div class="progress-wrap">
+    <div id="progressBar"></div>
+</div>
 
-        <section class="topic">
-            <h2>
-                Dp
-            </h2>
+
+    <div class="topic-nav">
+    
+        <a class="topic-card"
+           href="#topic-dp">
+            Dp
+        </a>
         
-        <section class="topic">
-            <h3>
+        <a class="topic-card"
+           href="#topic-graph">
+            Graph
+        </a>
+        
+        <a class="topic-card"
+           href="#topic-trie">
+            Trie
+        </a>
+        
+    </div>
+    
+
+
+        <div class="folder-block"
+             style="margin-left:0px">
+
+            <div class="folder-header"
+                 id="topic-dp">
+                Dp
+            </div>
+        
+        <div class="folder-block"
+             style="margin-left:24px">
+
+            <div class="folder-header"
+                 id="">
                 1D Dp
-            </h3>
+            </div>
         
         <div class="cards">
         
@@ -132,13 +277,13 @@ Loading...
                href="DP/1D DP/1D DP Climbing Stairs 70.html"
                data-id="1">
 
-                <div class="num">
+                <span class="num">
                     #1
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 70 - Climbing Stairs (1D DP) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -146,13 +291,13 @@ Loading...
                href="DP/1D DP/1D DP House Robber 198.html"
                data-id="2">
 
-                <div class="num">
+                <span class="num">
                     #2
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 198 - House Robber (1D DP) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -160,24 +305,27 @@ Loading...
                href="DP/1D DP/1D DP House Robber 2 213.html"
                data-id="3">
 
-                <div class="num">
+                <span class="num">
                     #3
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 213 - House Robber II (1D DP) Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h3>
+        <div class="folder-block"
+             style="margin-left:24px">
+
+            <div class="folder-header"
+                 id="">
                 2D Dp
-            </h3>
+            </div>
         
         <div class="cards">
         
@@ -185,13 +333,13 @@ Loading...
                href="DP/2D DP/2D DP Triangle 120.html"
                data-id="4">
 
-                <div class="num">
+                <span class="num">
                     #4
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 120 - Triangle (2D DP) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -199,24 +347,27 @@ Loading...
                href="DP/2D DP/2D DP Unique Paths 62.html"
                data-id="5">
 
-                <div class="num">
+                <span class="num">
                     #5
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 62 - Unique Paths (2D DP) Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h3>
+        <div class="folder-block"
+             style="margin-left:24px">
+
+            <div class="folder-header"
+                 id="">
                 Lis Dp
-            </h3>
+            </div>
         
         <div class="cards">
         
@@ -224,13 +375,13 @@ Loading...
                href="DP/LIS DP/Largest Divisible Subset.html"
                data-id="6">
 
-                <div class="num">
+                <span class="num">
                     #6
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 368 - Largest Divisible Subset Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -238,13 +389,13 @@ Loading...
                href="DP/LIS DP/Longest Increasing Subsequence (LIS).html"
                data-id="7">
 
-                <div class="num">
+                <span class="num">
                     #7
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode - Longest Increasing Subsequence (Binary Search) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -252,13 +403,13 @@ Loading...
                href="DP/LIS DP/Longest String Chain.html"
                data-id="8">
 
-                <div class="num">
+                <span class="num">
                     #8
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1048 - Longest String Chain Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -266,24 +417,27 @@ Loading...
                href="DP/LIS DP/Number of Longest Increasing Subsequence.html"
                data-id="9">
 
-                <div class="num">
+                <span class="num">
                     #9
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 673 - Number of LIS Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h3>
+        <div class="folder-block"
+             style="margin-left:24px">
+
+            <div class="folder-header"
+                 id="">
                 Mcm Dp
-            </h3>
+            </div>
         
         <div class="cards">
         
@@ -291,13 +445,13 @@ Loading...
                href="DP/MCM DP/Burst Balloons.html"
                data-id="10">
 
-                <div class="num">
+                <span class="num">
                     #10
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 312 - Burst Balloons (Java Structure) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -305,24 +459,27 @@ Loading...
                href="DP/MCM DP/Minimum Cost to Cut a Stick.html"
                data-id="11">
 
-                <div class="num">
+                <span class="num">
                     #11
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1547 - Minimum Cost to Cut a Stick Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h3>
+        <div class="folder-block"
+             style="margin-left:24px">
+
+            <div class="folder-header"
+                 id="">
                 Stocks Dp
-            </h3>
+            </div>
         
         <div class="cards">
         
@@ -330,13 +487,13 @@ Loading...
                href="DP/Stocks DP/Best Time to Buy and Sell Stock III.html"
                data-id="12">
 
-                <div class="num">
+                <span class="num">
                     #12
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 123 - Best Time to Buy and Sell Stock III Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -344,13 +501,13 @@ Loading...
                href="DP/Stocks DP/Best Time to Buy and Sell Stock IV.html"
                data-id="13">
 
-                <div class="num">
+                <span class="num">
                     #13
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 188 - Best Time to Buy and Sell Stock IV Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -358,24 +515,27 @@ Loading...
                href="DP/Stocks DP/Best Time to Buy and Sell Stock.html"
                data-id="14">
 
-                <div class="num">
+                <span class="num">
                     #14
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 121 - Best Time to Buy and Sell Stock Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h3>
+        <div class="folder-block"
+             style="margin-left:24px">
+
+            <div class="folder-header"
+                 id="">
                 Strings Dp
-            </h3>
+            </div>
         
         <div class="cards">
         
@@ -383,13 +543,13 @@ Loading...
                href="DP/Strings DP/Delete Operation for Two Strings.html"
                data-id="15">
 
-                <div class="num">
+                <span class="num">
                     #15
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 583 - Delete Operation for Two Strings
-                </div>
+                </span>
 
             </a>
             
@@ -397,13 +557,13 @@ Loading...
                href="DP/Strings DP/Distinct Subsequences.html"
                data-id="16">
 
-                <div class="num">
+                <span class="num">
                     #16
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 115 - Distinct Subsequences Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -411,13 +571,13 @@ Loading...
                href="DP/Strings DP/Edit Distance.html"
                data-id="17">
 
-                <div class="num">
+                <span class="num">
                     #17
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 72 - Edit Distance Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -425,13 +585,13 @@ Loading...
                href="DP/Strings DP/Longest Common Subsequence.html"
                data-id="18">
 
-                <div class="num">
+                <span class="num">
                     #18
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode - Longest Common Subsequence Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -439,13 +599,13 @@ Loading...
                href="DP/Strings DP/Longest Palindromic Subsequence (LPS).html"
                data-id="19">
 
-                <div class="num">
+                <span class="num">
                     #19
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     Python - Longest Palindromic Subsequence Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -453,13 +613,13 @@ Loading...
                href="DP/Strings DP/min_insertions_to_palindrome.html"
                data-id="20">
 
-                <div class="num">
+                <span class="num">
                     #20
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1312 - Minimum Insertion Steps to Make a String Palindrome
-                </div>
+                </span>
 
             </a>
             
@@ -467,13 +627,13 @@ Loading...
                href="DP/Strings DP/Shortest Common Supersequence (SCS).html"
                data-id="21">
 
-                <div class="num">
+                <span class="num">
                     #21
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1092 - Shortest Common Supersequence Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -481,24 +641,27 @@ Loading...
                href="DP/Strings DP/Wildcard Matching.html"
                data-id="22">
 
-                <div class="num">
+                <span class="num">
                     #22
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 44 - Wildcard Matching Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h3>
+        <div class="folder-block"
+             style="margin-left:24px">
+
+            <div class="folder-header"
+                 id="">
                 Subsequence Dp
-            </h3>
+            </div>
         
         <div class="cards">
         
@@ -506,13 +669,13 @@ Loading...
                href="DP/Subsequence DP/1D BFS Coin Change 322.html"
                data-id="23">
 
-                <div class="num">
+                <span class="num">
                     #23
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 322 - Coin Change (BFS) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -520,13 +683,13 @@ Loading...
                href="DP/Subsequence DP/1D DP Target Sum 494.html"
                data-id="24">
 
-                <div class="num">
+                <span class="num">
                     #24
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 494 - Target Sum (1D DP) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -534,26 +697,29 @@ Loading...
                href="DP/Subsequence DP/2D DP Partition Equal Subset Sum 416.html"
                data-id="25">
 
-                <div class="num">
+                <span class="num">
                     #25
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 416 - Partition Equal Subset Sum (2D DP)
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h2>
+        <div class="folder-block"
+             style="margin-left:0px">
+
+            <div class="folder-header"
+                 id="topic-graph">
                 Graph
-            </h2>
+            </div>
         
         <div class="cards">
         
@@ -561,13 +727,13 @@ Loading...
                href="graph/01-matrix-542.html"
                data-id="26">
 
-                <div class="num">
+                <span class="num">
                     #26
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 542 - 01 Matrix Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -575,13 +741,13 @@ Loading...
                href="graph/articulation-point critical vetrex.html"
                data-id="27">
 
-                <div class="num">
+                <span class="num">
                     #27
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     Articulation Points (Tarjan&#x27;s Algorithm) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -589,13 +755,13 @@ Loading...
                href="graph/binary-matrix-shartest-path-1091.html"
                data-id="28">
 
-                <div class="num">
+                <span class="num">
                     #28
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1091 - Shortest Path Binary Matrix (Lee Algorithm)
-                </div>
+                </span>
 
             </a>
             
@@ -603,13 +769,13 @@ Loading...
                href="graph/bridges-critical-edges.html"
                data-id="29">
 
-                <div class="num">
+                <span class="num">
                     #29
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1192 - Critical Connections (Tarjan&#x27;s Algorithm)
-                </div>
+                </span>
 
             </a>
             
@@ -617,13 +783,13 @@ Loading...
                href="graph/DSU on a matrix.html"
                data-id="30">
 
-                <div class="num">
+                <span class="num">
                     #30
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 827 - Making A Large Island (DSU)
-                </div>
+                </span>
 
             </a>
             
@@ -631,13 +797,13 @@ Loading...
                href="graph/Find the City With the Smallest Number of Neighbors at a Threshold Distance 1334.html"
                data-id="31">
 
-                <div class="num">
+                <span class="num">
                     #31
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1334 - Floyd-Warshall Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -645,13 +811,13 @@ Loading...
                href="graph/k stops cheapest flight - 787.html"
                data-id="32">
 
-                <div class="num">
+                <span class="num">
                     #32
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 787 - Cheapest Flights Within K Stops
-                </div>
+                </span>
 
             </a>
             
@@ -659,13 +825,13 @@ Loading...
                href="graph/Kahns-BFS-207.html"
                data-id="33">
 
-                <div class="num">
+                <span class="num">
                     #33
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 207 - Kahn&#x27;s Algorithm (BFS) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -673,13 +839,13 @@ Loading...
                href="graph/Kahns-DFS-207.html"
                data-id="34">
 
-                <div class="num">
+                <span class="num">
                     #34
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 207 - Java DFS Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -687,13 +853,13 @@ Loading...
                href="graph/kosaraju-scc.html"
                data-id="35">
 
-                <div class="num">
+                <span class="num">
                     #35
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     Kosaraju&#x27;s Algorithm (SCC) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -701,13 +867,13 @@ Loading...
                href="graph/kruskal-dsu-mst.html"
                data-id="36">
 
-                <div class="num">
+                <span class="num">
                     #36
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     Kruskal&#x27;s Algorithm (DSU) - MST Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -715,13 +881,13 @@ Loading...
                href="graph/n ops to connect a netwrok 1319.html"
                data-id="37">
 
-                <div class="num">
+                <span class="num">
                     #37
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 1319 - Network Connected (DSU) Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -729,13 +895,13 @@ Loading...
                href="graph/oranges-level-order-994.html"
                data-id="38">
 
-                <div class="num">
+                <span class="num">
                     #38
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 994 - Rotting Oranges Visualizer
-                </div>
+                </span>
 
             </a>
             
@@ -743,24 +909,27 @@ Loading...
                href="graph/prims.html"
                data-id="39">
 
-                <div class="num">
+                <span class="num">
                     #39
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     Prim&#x27;s Algorithm - Minimum Spanning Tree Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
-        <section class="topic">
-            <h2>
+        <div class="folder-block"
+             style="margin-left:0px">
+
+            <div class="folder-header"
+                 id="topic-trie">
                 Trie
-            </h2>
+            </div>
         
         <div class="cards">
         
@@ -768,23 +937,22 @@ Loading...
                href="trie/Implement Trie (Prefix Tree).html"
                data-id="40">
 
-                <div class="num">
+                <span class="num">
                     #40
-                </div>
+                </span>
 
-                <div class="title">
+                <span class="title">
                     LeetCode 208 - Implement Trie Visualizer
-                </div>
+                </span>
 
             </a>
             
         </div>
         
-        </section>
+        </div>
         
 
 <script>
-
 const STORAGE_KEY =
     "algo_visualizations_visited";
 
@@ -815,15 +983,37 @@ cards.forEach(card => {
             JSON.stringify([...visited])
         );
 
+        updateProgress();
+
     });
 
 });
 
-document.getElementById(
-    "progress"
-).textContent =
-    `Visited ${visited.size} / ${cards.length} visualizations`;
+function updateProgress(){
 
+    const count =
+        visited.size;
+
+    const total =
+        cards.length;
+
+    const pct =
+        total === 0
+        ? 0
+        : count * 100 / total;
+
+    document
+        .getElementById("progress")
+        .textContent =
+        `Visited ${count} / ${total} visualizations`;
+
+    document
+        .getElementById("progressBar")
+        .style.width =
+        pct + "%";
+}
+
+updateProgress();
 </script>
 
 </body>
