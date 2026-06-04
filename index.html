@@ -11,66 +11,113 @@
 
 <style>
 
-body{
+* {
+    box-sizing:border-box;
+}
+
+body {
     font-family:Arial,sans-serif;
-    max-width:1400px;
+    max-width:1500px;
     margin:auto;
     padding:30px;
     background:#fafafa;
 }
 
-h1{
+h1 {
     text-align:center;
+    margin-bottom:10px;
 }
 
-.topic{
-    margin-top:30px;
+#progress {
+    text-align:center;
+    font-size:18px;
+    font-weight:600;
+    margin-bottom:20px;
 }
 
-.cards{
+#controls {
+    text-align:center;
+    margin-bottom:30px;
+}
+
+button {
+    cursor:pointer;
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    background:#2563eb;
+    color:white;
+    font-weight:600;
+}
+
+button:hover {
+    opacity:.9;
+}
+
+.topic {
+    margin-top:35px;
+}
+
+h2,h3,h4,h5,h6 {
+    border-bottom:2px solid #ddd;
+    padding-bottom:8px;
+}
+
+.cards {
     display:flex;
     flex-wrap:wrap;
-    gap:12px;
+    gap:14px;
+    margin-top:15px;
 }
 
-.card{
-    display:flex;
-    flex-direction:column;
+.card {
 
     width:280px;
-
-    padding:14px;
-
-    border:1px solid #ddd;
-    border-radius:10px;
-
-    background:white;
 
     text-decoration:none;
     color:#111;
 
-    transition:0.15s;
+    background:white;
+
+    border:1px solid #ddd;
+    border-radius:12px;
+
+    padding:16px;
+
+    transition:.15s;
 }
 
-.card:hover{
-    transform:translateY(-2px);
-    box-shadow:0 3px 10px rgba(0,0,0,.08);
+.card:hover {
+    transform:translateY(-3px);
+    box-shadow:
+        0 5px 15px rgba(0,0,0,.08);
 }
 
-.num{
+.card.visited {
+
+    background:#ecfdf5;
+
+    border-color:#10b981;
+}
+
+.card.visited .num {
+    color:#047857;
+}
+
+.card.visited .title {
+    color:#065f46;
+}
+
+.num {
     font-size:12px;
     color:#666;
-    margin-bottom:6px;
+    margin-bottom:8px;
 }
 
-.title{
+.title {
     font-size:15px;
     font-weight:600;
-}
-
-h2,h3,h4,h5,h6{
-    border-bottom:1px solid #ddd;
-    padding-bottom:6px;
+    line-height:1.4;
 }
 
 </style>
@@ -81,457 +128,755 @@ h2,h3,h4,h5,h6{
 
 <h1>Algorithm Visualizations</h1>
 
+<div id="progress">
+Loading...
+</div>
 
-        <div class="topic level-2">
+<div id="controls">
+    <button id="resetProgress">
+        Reset Progress
+    </button>
+</div>
+
+
+        <section class="topic">
             <h2>
                 Dp
             </h2>
         
-        <div class="topic level-3">
+        <section class="topic">
             <h3>
                 1D Dp
             </h3>
+        
         <div class="cards">
-            <a class="card" href="DP/1D DP/1D DP Climbing Stairs 70.html">
-                <span class="num">
+        
+            <a class="card"
+               href="DP/1D DP/1D DP Climbing Stairs 70.html"
+               data-id="1">
+
+                <div class="num">
                     #1
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 70 - Climbing Stairs (1D DP) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/1D DP/1D DP House Robber 198.html">
-                <span class="num">
+            <a class="card"
+               href="DP/1D DP/1D DP House Robber 198.html"
+               data-id="2">
+
+                <div class="num">
                     #2
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 198 - House Robber (1D DP) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/1D DP/1D DP House Robber 2 213.html">
-                <span class="num">
-                    #3
-                </span>
+            <a class="card"
+               href="DP/1D DP/1D DP House Robber 2 213.html"
+               data-id="3">
 
-                <span class="title">
+                <div class="num">
+                    #3
+                </div>
+
+                <div class="title">
                     LeetCode 213 - House Robber II (1D DP) Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
-        <div class="topic level-3">
+            
+        </div>
+        
+        </section>
+        
+        <section class="topic">
             <h3>
                 2D Dp
             </h3>
+        
         <div class="cards">
-            <a class="card" href="DP/2D DP/2D DP Triangle 120.html">
-                <span class="num">
-                    #4
-                </span>
+        
+            <a class="card"
+               href="DP/2D DP/2D DP Triangle 120.html"
+               data-id="4">
 
-                <span class="title">
+                <div class="num">
+                    #4
+                </div>
+
+                <div class="title">
                     LeetCode 120 - Triangle (2D DP) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/2D DP/2D DP Unique Paths 62.html">
-                <span class="num">
-                    #5
-                </span>
+            <a class="card"
+               href="DP/2D DP/2D DP Unique Paths 62.html"
+               data-id="5">
 
-                <span class="title">
+                <div class="num">
+                    #5
+                </div>
+
+                <div class="title">
                     LeetCode 62 - Unique Paths (2D DP) Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
-        <div class="topic level-3">
+            
+        </div>
+        
+        </section>
+        
+        <section class="topic">
             <h3>
                 Lis Dp
             </h3>
+        
         <div class="cards">
-            <a class="card" href="DP/LIS DP/Largest Divisible Subset.html">
-                <span class="num">
+        
+            <a class="card"
+               href="DP/LIS DP/Largest Divisible Subset.html"
+               data-id="6">
+
+                <div class="num">
                     #6
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 368 - Largest Divisible Subset Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/LIS DP/Longest Increasing Subsequence (LIS).html">
-                <span class="num">
+            <a class="card"
+               href="DP/LIS DP/Longest Increasing Subsequence (LIS).html"
+               data-id="7">
+
+                <div class="num">
                     #7
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode - Longest Increasing Subsequence (Binary Search) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/LIS DP/Longest String Chain.html">
-                <span class="num">
+            <a class="card"
+               href="DP/LIS DP/Longest String Chain.html"
+               data-id="8">
+
+                <div class="num">
                     #8
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 1048 - Longest String Chain Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/LIS DP/Number of Longest Increasing Subsequence.html">
-                <span class="num">
-                    #9
-                </span>
+            <a class="card"
+               href="DP/LIS DP/Number of Longest Increasing Subsequence.html"
+               data-id="9">
 
-                <span class="title">
+                <div class="num">
+                    #9
+                </div>
+
+                <div class="title">
                     LeetCode 673 - Number of LIS Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
-        <div class="topic level-3">
+            
+        </div>
+        
+        </section>
+        
+        <section class="topic">
             <h3>
                 Mcm Dp
             </h3>
+        
         <div class="cards">
-            <a class="card" href="DP/MCM DP/Burst Balloons.html">
-                <span class="num">
-                    #10
-                </span>
+        
+            <a class="card"
+               href="DP/MCM DP/Burst Balloons.html"
+               data-id="10">
 
-                <span class="title">
+                <div class="num">
+                    #10
+                </div>
+
+                <div class="title">
                     LeetCode 312 - Burst Balloons (Java Structure) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/MCM DP/Minimum Cost to Cut a Stick.html">
-                <span class="num">
-                    #11
-                </span>
+            <a class="card"
+               href="DP/MCM DP/Minimum Cost to Cut a Stick.html"
+               data-id="11">
 
-                <span class="title">
+                <div class="num">
+                    #11
+                </div>
+
+                <div class="title">
                     LeetCode 1547 - Minimum Cost to Cut a Stick Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
-        <div class="topic level-3">
+            
+        </div>
+        
+        </section>
+        
+        <section class="topic">
             <h3>
                 Stocks Dp
             </h3>
+        
         <div class="cards">
-            <a class="card" href="DP/Stocks DP/Best Time to Buy and Sell Stock III.html">
-                <span class="num">
+        
+            <a class="card"
+               href="DP/Stocks DP/Best Time to Buy and Sell Stock III.html"
+               data-id="12">
+
+                <div class="num">
                     #12
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 123 - Best Time to Buy and Sell Stock III Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Stocks DP/Best Time to Buy and Sell Stock IV.html">
-                <span class="num">
+            <a class="card"
+               href="DP/Stocks DP/Best Time to Buy and Sell Stock IV.html"
+               data-id="13">
+
+                <div class="num">
                     #13
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 188 - Best Time to Buy and Sell Stock IV Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Stocks DP/Best Time to Buy and Sell Stock.html">
-                <span class="num">
-                    #14
-                </span>
+            <a class="card"
+               href="DP/Stocks DP/Best Time to Buy and Sell Stock.html"
+               data-id="14">
 
-                <span class="title">
+                <div class="num">
+                    #14
+                </div>
+
+                <div class="title">
                     LeetCode 121 - Best Time to Buy and Sell Stock Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
-        <div class="topic level-3">
+            
+        </div>
+        
+        </section>
+        
+        <section class="topic">
             <h3>
                 Strings Dp
             </h3>
+        
         <div class="cards">
-            <a class="card" href="DP/Strings DP/Delete Operation for Two Strings.html">
-                <span class="num">
+        
+            <a class="card"
+               href="DP/Strings DP/Delete Operation for Two Strings.html"
+               data-id="15">
+
+                <div class="num">
                     #15
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 583 - Delete Operation for Two Strings
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Strings DP/Distinct Subsequences.html">
-                <span class="num">
+            <a class="card"
+               href="DP/Strings DP/Distinct Subsequences.html"
+               data-id="16">
+
+                <div class="num">
                     #16
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 115 - Distinct Subsequences Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Strings DP/Edit Distance.html">
-                <span class="num">
+            <a class="card"
+               href="DP/Strings DP/Edit Distance.html"
+               data-id="17">
+
+                <div class="num">
                     #17
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 72 - Edit Distance Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Strings DP/Longest Common Subsequence.html">
-                <span class="num">
+            <a class="card"
+               href="DP/Strings DP/Longest Common Subsequence.html"
+               data-id="18">
+
+                <div class="num">
                     #18
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode - Longest Common Subsequence Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Strings DP/Longest Palindromic Subsequence (LPS).html">
-                <span class="num">
+            <a class="card"
+               href="DP/Strings DP/Longest Palindromic Subsequence (LPS).html"
+               data-id="19">
+
+                <div class="num">
                     #19
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     Python - Longest Palindromic Subsequence Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Strings DP/min_insertions_to_palindrome.html">
-                <span class="num">
+            <a class="card"
+               href="DP/Strings DP/min_insertions_to_palindrome.html"
+               data-id="20">
+
+                <div class="num">
                     #20
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 1312 - Minimum Insertion Steps to Make a String Palindrome
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Strings DP/Shortest Common Supersequence (SCS).html">
-                <span class="num">
+            <a class="card"
+               href="DP/Strings DP/Shortest Common Supersequence (SCS).html"
+               data-id="21">
+
+                <div class="num">
                     #21
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 1092 - Shortest Common Supersequence Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Strings DP/Wildcard Matching.html">
-                <span class="num">
-                    #22
-                </span>
+            <a class="card"
+               href="DP/Strings DP/Wildcard Matching.html"
+               data-id="22">
 
-                <span class="title">
+                <div class="num">
+                    #22
+                </div>
+
+                <div class="title">
                     LeetCode 44 - Wildcard Matching Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
-        <div class="topic level-3">
+            
+        </div>
+        
+        </section>
+        
+        <section class="topic">
             <h3>
                 Subsequence Dp
             </h3>
+        
         <div class="cards">
-            <a class="card" href="DP/Subsequence DP/1D BFS Coin Change 322.html">
-                <span class="num">
+        
+            <a class="card"
+               href="DP/Subsequence DP/1D BFS Coin Change 322.html"
+               data-id="23">
+
+                <div class="num">
                     #23
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 322 - Coin Change (BFS) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Subsequence DP/1D DP Target Sum 494.html">
-                <span class="num">
+            <a class="card"
+               href="DP/Subsequence DP/1D DP Target Sum 494.html"
+               data-id="24">
+
+                <div class="num">
                     #24
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 494 - Target Sum (1D DP) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="DP/Subsequence DP/2D DP Partition Equal Subset Sum 416.html">
-                <span class="num">
-                    #25
-                </span>
+            <a class="card"
+               href="DP/Subsequence DP/2D DP Partition Equal Subset Sum 416.html"
+               data-id="25">
 
-                <span class="title">
+                <div class="num">
+                    #25
+                </div>
+
+                <div class="title">
                     LeetCode 416 - Partition Equal Subset Sum (2D DP)
-                </span>
+                </div>
+
             </a>
-            </div></div></div>
-        <div class="topic level-2">
+            
+        </div>
+        
+        </section>
+        
+        </section>
+        
+        <section class="topic">
             <h2>
                 Graph
             </h2>
+        
         <div class="cards">
-            <a class="card" href="graph/01-matrix-542.html">
-                <span class="num">
+        
+            <a class="card"
+               href="graph/01-matrix-542.html"
+               data-id="26">
+
+                <div class="num">
                     #26
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 542 - 01 Matrix Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/articulation-point critical vetrex.html">
-                <span class="num">
+            <a class="card"
+               href="graph/articulation-point critical vetrex.html"
+               data-id="27">
+
+                <div class="num">
                     #27
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     Articulation Points (Tarjan&#x27;s Algorithm) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/binary-matrix-shartest-path-1091.html">
-                <span class="num">
+            <a class="card"
+               href="graph/binary-matrix-shartest-path-1091.html"
+               data-id="28">
+
+                <div class="num">
                     #28
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 1091 - Shortest Path Binary Matrix (Lee Algorithm)
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/bridges-critical-edges.html">
-                <span class="num">
+            <a class="card"
+               href="graph/bridges-critical-edges.html"
+               data-id="29">
+
+                <div class="num">
                     #29
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 1192 - Critical Connections (Tarjan&#x27;s Algorithm)
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/DSU on a matrix.html">
-                <span class="num">
+            <a class="card"
+               href="graph/DSU on a matrix.html"
+               data-id="30">
+
+                <div class="num">
                     #30
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 827 - Making A Large Island (DSU)
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/Find the City With the Smallest Number of Neighbors at a Threshold Distance 1334.html">
-                <span class="num">
+            <a class="card"
+               href="graph/Find the City With the Smallest Number of Neighbors at a Threshold Distance 1334.html"
+               data-id="31">
+
+                <div class="num">
                     #31
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 1334 - Floyd-Warshall Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/k stops cheapest flight - 787.html">
-                <span class="num">
+            <a class="card"
+               href="graph/k stops cheapest flight - 787.html"
+               data-id="32">
+
+                <div class="num">
                     #32
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 787 - Cheapest Flights Within K Stops
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/Kahns-BFS-207.html">
-                <span class="num">
+            <a class="card"
+               href="graph/Kahns-BFS-207.html"
+               data-id="33">
+
+                <div class="num">
                     #33
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 207 - Kahn&#x27;s Algorithm (BFS) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/Kahns-DFS-207.html">
-                <span class="num">
+            <a class="card"
+               href="graph/Kahns-DFS-207.html"
+               data-id="34">
+
+                <div class="num">
                     #34
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 207 - Java DFS Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/kosaraju-scc.html">
-                <span class="num">
+            <a class="card"
+               href="graph/kosaraju-scc.html"
+               data-id="35">
+
+                <div class="num">
                     #35
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     Kosaraju&#x27;s Algorithm (SCC) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/kruskal-dsu-mst.html">
-                <span class="num">
+            <a class="card"
+               href="graph/kruskal-dsu-mst.html"
+               data-id="36">
+
+                <div class="num">
                     #36
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     Kruskal&#x27;s Algorithm (DSU) - MST Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/n ops to connect a netwrok 1319.html">
-                <span class="num">
+            <a class="card"
+               href="graph/n ops to connect a netwrok 1319.html"
+               data-id="37">
+
+                <div class="num">
                     #37
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 1319 - Network Connected (DSU) Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/oranges-level-order-994.html">
-                <span class="num">
+            <a class="card"
+               href="graph/oranges-level-order-994.html"
+               data-id="38">
+
+                <div class="num">
                     #38
-                </span>
+                </div>
 
-                <span class="title">
+                <div class="title">
                     LeetCode 994 - Rotting Oranges Visualizer
-                </span>
+                </div>
+
             </a>
             
-            <a class="card" href="graph/prims.html">
-                <span class="num">
-                    #39
-                </span>
+            <a class="card"
+               href="graph/prims.html"
+               data-id="39">
 
-                <span class="title">
+                <div class="num">
+                    #39
+                </div>
+
+                <div class="title">
                     Prim&#x27;s Algorithm - Minimum Spanning Tree Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
-        <div class="topic level-2">
+            
+        </div>
+        
+        </section>
+        
+        <section class="topic">
             <h2>
                 Trie
             </h2>
+        
         <div class="cards">
-            <a class="card" href="trie/Implement Trie (Prefix Tree).html">
-                <span class="num">
-                    #40
-                </span>
+        
+            <a class="card"
+               href="trie/Implement Trie (Prefix Tree).html"
+               data-id="40">
 
-                <span class="title">
+                <div class="num">
+                    #40
+                </div>
+
+                <div class="title">
                     LeetCode 208 - Implement Trie Visualizer
-                </span>
+                </div>
+
             </a>
-            </div></div>
+            
+        </div>
+        
+        </section>
+        
+
+<script>
+
+const STORAGE_KEY =
+    "algo_visualization_progress";
+
+const visited =
+    new Set(
+        JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+            || "[]"
+        )
+    );
+
+const cards =
+    document.querySelectorAll(".card");
+
+cards.forEach(card => {
+
+    const id = card.dataset.id;
+
+    if (visited.has(id))
+        card.classList.add("visited");
+
+    card.addEventListener("click", () => {
+
+        visited.add(id);
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify([...visited])
+        );
+
+    });
+
+});
+
+function updateProgress() {
+
+    document.getElementById(
+        "progress"
+    ).textContent =
+        `Completed ${visited.size} / ${cards.length} visualizations`;
+
+}
+
+updateProgress();
+
+document
+    .getElementById("resetProgress")
+    .addEventListener(
+        "click",
+        () => {
+
+            if (
+                confirm(
+                    "Reset all progress?"
+                )
+            ) {
+
+                localStorage.removeItem(
+                    STORAGE_KEY
+                );
+
+                location.reload();
+
+            }
+
+        }
+    );
+
+</script>
 
 </body>
 </html>
