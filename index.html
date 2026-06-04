@@ -5,7 +5,7 @@
 
 <meta charset="utf-8">
 <meta name="viewport"
-      content="width=device-width,initial-scale=1">
+      content="width=device-width, initial-scale=1">
 
 <title>Algorithm Visualizations</title>
 
@@ -16,7 +16,7 @@
 }
 
 body {
-    font-family:Arial,sans-serif;
+    font-family:Arial, sans-serif;
     max-width:1500px;
     margin:auto;
     padding:30px;
@@ -30,28 +30,9 @@ h1 {
 
 #progress {
     text-align:center;
-    font-size:18px;
+    margin-bottom:25px;
     font-weight:600;
-    margin-bottom:20px;
-}
-
-#controls {
-    text-align:center;
-    margin-bottom:30px;
-}
-
-button {
-    cursor:pointer;
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    background:#2563eb;
-    color:white;
-    font-weight:600;
-}
-
-button:hover {
-    opacity:.9;
+    color:#444;
 }
 
 .topic {
@@ -72,10 +53,9 @@ h2,h3,h4,h5,h6 {
 
 .card {
 
-    width:280px;
+    width:300px;
 
     text-decoration:none;
-    color:#111;
 
     background:white;
 
@@ -88,24 +68,8 @@ h2,h3,h4,h5,h6 {
 }
 
 .card:hover {
-    transform:translateY(-3px);
-    box-shadow:
-        0 5px 15px rgba(0,0,0,.08);
-}
-
-.card.visited {
-
-    background:#ecfdf5;
-
-    border-color:#10b981;
-}
-
-.card.visited .num {
-    color:#047857;
-}
-
-.card.visited .title {
-    color:#065f46;
+    transform:translateY(-2px);
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
 }
 
 .num {
@@ -115,9 +79,28 @@ h2,h3,h4,h5,h6 {
 }
 
 .title {
-    font-size:15px;
-    font-weight:600;
+    font-size:16px;
     line-height:1.4;
+    color:#2563eb;
+}
+
+.card:visited .title {
+    color:#551A8B;
+}
+
+/* localStorage based visited state */
+
+.card.visited {
+    background:#faf5ff;
+    border-color:#d8b4fe;
+}
+
+.card.visited .title {
+    color:#551A8B;
+}
+
+.card.visited .num {
+    color:#7e22ce;
 }
 
 </style>
@@ -130,12 +113,6 @@ h2,h3,h4,h5,h6 {
 
 <div id="progress">
 Loading...
-</div>
-
-<div id="controls">
-    <button id="resetProgress">
-        Reset Progress
-    </button>
 </div>
 
 
@@ -809,7 +786,7 @@ Loading...
 <script>
 
 const STORAGE_KEY =
-    "algo_visualization_progress";
+    "algo_visualizations_visited";
 
 const visited =
     new Set(
@@ -842,39 +819,10 @@ cards.forEach(card => {
 
 });
 
-function updateProgress() {
-
-    document.getElementById(
-        "progress"
-    ).textContent =
-        `Completed ${visited.size} / ${cards.length} visualizations`;
-
-}
-
-updateProgress();
-
-document
-    .getElementById("resetProgress")
-    .addEventListener(
-        "click",
-        () => {
-
-            if (
-                confirm(
-                    "Reset all progress?"
-                )
-            ) {
-
-                localStorage.removeItem(
-                    STORAGE_KEY
-                );
-
-                location.reload();
-
-            }
-
-        }
-    );
+document.getElementById(
+    "progress"
+).textContent =
+    `Visited ${visited.size} / ${cards.length} visualizations`;
 
 </script>
 
