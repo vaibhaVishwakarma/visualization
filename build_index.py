@@ -1,20 +1,31 @@
 from pathlib import Path
+import json
 import re
+from html import escape
 
 ROOT = Path(".")
+ID_FILE = ROOT / "visualization_ids.json"
+
+
+# --------------------------
+# Title extraction
+# --------------------------
 
 def get_title(html_file):
     try:
-        content = html_file.read_text(encoding="utf-8", errors="ignore")
+        content = html_file.read_text(
+            encoding="utf-8",
+            errors="ignore"
+        )
 
-        match = re.search(
+        m = re.search(
             r"<title>(.*?)</title>",
             content,
             re.IGNORECASE | re.DOTALL
         )
 
-        if match:
-            return match.group(1).strip()
+        if m:
+            return m.group(1).strip()
 
     except Exception:
         pass
@@ -22,105 +33,232 @@ def get_title(html_file):
     return html_file.stem
 
 
-html = """
+# --------------------------
+# Load persistent IDs
+# --------------------------
+
+if ID_FILE.exists():
+    ids = json.loads(ID_FILE.read_text(encoding="utf-8"))
+else:
+    ids = {}
+
+next_id = (
+    max(ids.values()) + 1
+    if ids
+    else 1
+)
+
+
+# --------------------------
+# Collect html files
+# --------------------------
+
+html_files = sorted(
+    p for p in ROOT.rglob("*.html")
+    if p.name != "index.html"
+)
+
+for file in html_files:
+
+    rel = file.relative_to(ROOT).as_posix()
+
+    if rel not in ids:
+        ids[rel] = next_id
+        next_id += 1
+
+
+# Save updated IDs
+ID_FILE.write_text(
+    json.dumps(ids, indent=2),
+    encoding="utf-8"
+)
+
+
+# --------------------------
+# Build tree structure
+# --------------------------
+
+tree = {}
+
+for file in html_files:
+
+    rel = file.relative_to(ROOT)
+
+    node = tree
+
+    parts = rel.parts[:-1]
+
+    for part in parts:
+        node = node.setdefault(part, {})
+
+    node.setdefault("__files__", []).append(file)
+
+
+# --------------------------
+# Recursive HTML rendering
+# --------------------------
+
+def render_node(node, level=2):
+
+    html = ""
+
+    folders = sorted(
+        k for k in node.keys()
+        if k != "__files__"
+    )
+
+    files = sorted(
+        node.get("__files__", []),
+        key=lambda x: ids[x.relative_to(ROOT).as_posix()]
+    )
+
+    for folder in folders:
+
+        html += f"""
+        <div class="topic level-{level}">
+            <h{min(level,6)}>
+                {escape(folder.replace('_',' ').title())}
+            </h{min(level,6)}>
+        """
+
+        html += render_node(
+            node[folder],
+            level + 1
+        )
+
+        html += "</div>"
+
+    if files:
+
+        html += '<div class="cards">'
+
+        for file in files:
+
+            rel = file.relative_to(ROOT).as_posix()
+
+            file_id = ids[rel]
+
+            title = escape(
+                get_title(file)
+            )
+
+            html += f"""
+            <a class="card" href="{rel}">
+                <span class="num">
+                    #{file_id}
+                </span>
+
+                <span class="title">
+                    {title}
+                </span>
+            </a>
+            """
+
+        html += "</div>"
+
+    return html
+
+
+# --------------------------
+# Main page
+# --------------------------
+
+html = f"""
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1">
 
 <title>Algorithm Visualizations</title>
 
 <style>
 
-body{
+body{{
     font-family:Arial,sans-serif;
-    max-width:1200px;
+    max-width:1400px;
     margin:auto;
     padding:30px;
     background:#fafafa;
-}
+}}
 
-h1{
+h1{{
     text-align:center;
-}
+}}
 
-.topic{
-    margin-top:35px;
-}
+.topic{{
+    margin-top:30px;
+}}
 
-.topic h2{
-    border-bottom:2px solid #ddd;
-    padding-bottom:8px;
-}
+.cards{{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+}}
 
-ul{
-    list-style:none;
-    padding-left:0;
-}
+.card{{
+    display:flex;
+    flex-direction:column;
 
-li{
-    margin:8px 0;
-}
+    width:280px;
 
-a{
+    padding:14px;
+
+    border:1px solid #ddd;
+    border-radius:10px;
+
+    background:white;
+
     text-decoration:none;
-    color:#2563eb;
-}
+    color:#111;
 
-a:hover{
-    text-decoration:underline;
-}
+    transition:0.15s;
+}}
+
+.card:hover{{
+    transform:translateY(-2px);
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+}}
+
+.num{{
+    font-size:12px;
+    color:#666;
+    margin-bottom:6px;
+}}
+
+.title{{
+    font-size:15px;
+    font-weight:600;
+}}
+
+h2,h3,h4,h5,h6{{
+    border-bottom:1px solid #ddd;
+    padding-bottom:6px;
+}}
 
 </style>
+
 </head>
 
 <body>
 
 <h1>Algorithm Visualizations</h1>
-"""
 
-for folder in sorted(ROOT.iterdir()):
+{render_node(tree)}
 
-    if not folder.is_dir():
-        continue
-
-    files = sorted(folder.glob("*.html"))
-
-    if not files:
-        continue
-
-    html += f"""
-    <div class="topic">
-        <h2>{folder.name.title()}</h2>
-        <ul>
-    """
-
-    for file in files:
-
-        title = get_title(file)
-
-        html += f"""
-        <li>
-            <a href="{file.as_posix()}">
-                {title}
-            </a>
-        </li>
-        """
-
-    html += """
-        </ul>
-    </div>
-    """
-
-html += """
 </body>
 </html>
 """
+
 
 Path("index.html").write_text(
     html,
     encoding="utf-8"
 )
 
-print("Generated index.html")
+print(
+    f"Generated index.html with "
+    f"{len(html_files)} visualizations."
+)

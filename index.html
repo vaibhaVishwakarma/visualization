@@ -2,8 +2,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1">
 
 <title>Algorithm Visualizations</title>
 
@@ -11,7 +13,7 @@
 
 body{
     font-family:Arial,sans-serif;
-    max-width:1200px;
+    max-width:1400px;
     margin:auto;
     padding:30px;
     background:#fafafa;
@@ -22,142 +24,514 @@ h1{
 }
 
 .topic{
-    margin-top:35px;
+    margin-top:30px;
 }
 
-.topic h2{
-    border-bottom:2px solid #ddd;
-    padding-bottom:8px;
+.cards{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
 }
 
-ul{
-    list-style:none;
-    padding-left:0;
-}
+.card{
+    display:flex;
+    flex-direction:column;
 
-li{
-    margin:8px 0;
-}
+    width:280px;
 
-a{
+    padding:14px;
+
+    border:1px solid #ddd;
+    border-radius:10px;
+
+    background:white;
+
     text-decoration:none;
-    color:#2563eb;
+    color:#111;
+
+    transition:0.15s;
 }
 
-a:hover{
-    text-decoration:underline;
+.card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+}
+
+.num{
+    font-size:12px;
+    color:#666;
+    margin-bottom:6px;
+}
+
+.title{
+    font-size:15px;
+    font-weight:600;
+}
+
+h2,h3,h4,h5,h6{
+    border-bottom:1px solid #ddd;
+    padding-bottom:6px;
 }
 
 </style>
+
 </head>
 
 <body>
 
 <h1>Algorithm Visualizations</h1>
 
-    <div class="topic">
-        <h2>Graph</h2>
-        <ul>
-    
-        <li>
-            <a href="graph/01-matrix-542.html">
-                LeetCode 542 - 01 Matrix Visualizer
-            </a>
-        </li>
+
+        <div class="topic level-2">
+            <h2>
+                Dp
+            </h2>
         
-        <li>
-            <a href="graph/articulation-point critical vetrex.html">
-                Articulation Points (Tarjan's Algorithm) Visualizer
+        <div class="topic level-3">
+            <h3>
+                1D Dp
+            </h3>
+        <div class="cards">
+            <a class="card" href="DP/1D DP/1D DP Climbing Stairs 70.html">
+                <span class="num">
+                    #1
+                </span>
+
+                <span class="title">
+                    LeetCode 70 - Climbing Stairs (1D DP) Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/binary-matrix-shartest-path-1091.html">
-                LeetCode 1091 - Shortest Path Binary Matrix (Lee Algorithm)
+            
+            <a class="card" href="DP/1D DP/1D DP House Robber 198.html">
+                <span class="num">
+                    #2
+                </span>
+
+                <span class="title">
+                    LeetCode 198 - House Robber (1D DP) Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/bridges-critical-edges.html">
-                LeetCode 1192 - Critical Connections (Tarjan's Algorithm)
+            
+            <a class="card" href="DP/1D DP/1D DP House Robber 2 213.html">
+                <span class="num">
+                    #3
+                </span>
+
+                <span class="title">
+                    LeetCode 213 - House Robber II (1D DP) Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/DSU on a matrix.html">
-                LeetCode 827 - Making A Large Island (DSU)
+            </div></div>
+        <div class="topic level-3">
+            <h3>
+                2D Dp
+            </h3>
+        <div class="cards">
+            <a class="card" href="DP/2D DP/2D DP Triangle 120.html">
+                <span class="num">
+                    #4
+                </span>
+
+                <span class="title">
+                    LeetCode 120 - Triangle (2D DP) Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/Find the City With the Smallest Number of Neighbors at a Threshold Distance 1334.html">
-                LeetCode 1334 - Floyd-Warshall Visualizer
+            
+            <a class="card" href="DP/2D DP/2D DP Unique Paths 62.html">
+                <span class="num">
+                    #5
+                </span>
+
+                <span class="title">
+                    LeetCode 62 - Unique Paths (2D DP) Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/k stops cheapest flight - 787.html">
-                LeetCode 787 - Cheapest Flights Within K Stops
+            </div></div>
+        <div class="topic level-3">
+            <h3>
+                Lis Dp
+            </h3>
+        <div class="cards">
+            <a class="card" href="DP/LIS DP/Largest Divisible Subset.html">
+                <span class="num">
+                    #6
+                </span>
+
+                <span class="title">
+                    LeetCode 368 - Largest Divisible Subset Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/Kahns-BFS-207.html">
-                LeetCode 207 - Kahn's Algorithm (BFS) Visualizer
+            
+            <a class="card" href="DP/LIS DP/Longest Increasing Subsequence (LIS).html">
+                <span class="num">
+                    #7
+                </span>
+
+                <span class="title">
+                    LeetCode - Longest Increasing Subsequence (Binary Search) Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/Kahns-DFS-207.html">
-                LeetCode 207 - Java DFS Visualizer
+            
+            <a class="card" href="DP/LIS DP/Longest String Chain.html">
+                <span class="num">
+                    #8
+                </span>
+
+                <span class="title">
+                    LeetCode 1048 - Longest String Chain Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/kosaraju-scc.html">
-                Kosaraju's Algorithm (SCC) Visualizer
+            
+            <a class="card" href="DP/LIS DP/Number of Longest Increasing Subsequence.html">
+                <span class="num">
+                    #9
+                </span>
+
+                <span class="title">
+                    LeetCode 673 - Number of LIS Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/kruskal-dsu-mst.html">
-                Kruskal's Algorithm (DSU) - MST Visualizer
+            </div></div>
+        <div class="topic level-3">
+            <h3>
+                Mcm Dp
+            </h3>
+        <div class="cards">
+            <a class="card" href="DP/MCM DP/Burst Balloons.html">
+                <span class="num">
+                    #10
+                </span>
+
+                <span class="title">
+                    LeetCode 312 - Burst Balloons (Java Structure) Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/n ops to connect a netwrok 1319.html">
-                LeetCode 1319 - Network Connected (DSU) Visualizer
+            
+            <a class="card" href="DP/MCM DP/Minimum Cost to Cut a Stick.html">
+                <span class="num">
+                    #11
+                </span>
+
+                <span class="title">
+                    LeetCode 1547 - Minimum Cost to Cut a Stick Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/oranges-level-order-994.html">
-                LeetCode 994 - Rotting Oranges Visualizer
+            </div></div>
+        <div class="topic level-3">
+            <h3>
+                Stocks Dp
+            </h3>
+        <div class="cards">
+            <a class="card" href="DP/Stocks DP/Best Time to Buy and Sell Stock III.html">
+                <span class="num">
+                    #12
+                </span>
+
+                <span class="title">
+                    LeetCode 123 - Best Time to Buy and Sell Stock III Visualizer
+                </span>
             </a>
-        </li>
-        
-        <li>
-            <a href="graph/prims.html">
-                Prim's Algorithm - Minimum Spanning Tree Visualizer
+            
+            <a class="card" href="DP/Stocks DP/Best Time to Buy and Sell Stock IV.html">
+                <span class="num">
+                    #13
+                </span>
+
+                <span class="title">
+                    LeetCode 188 - Best Time to Buy and Sell Stock IV Visualizer
+                </span>
             </a>
-        </li>
-        
-        </ul>
-    </div>
-    
-    <div class="topic">
-        <h2>Trie</h2>
-        <ul>
-    
-        <li>
-            <a href="trie/Implement Trie (Prefix Tree).html">
-                LeetCode 208 - Implement Trie Visualizer
+            
+            <a class="card" href="DP/Stocks DP/Best Time to Buy and Sell Stock.html">
+                <span class="num">
+                    #14
+                </span>
+
+                <span class="title">
+                    LeetCode 121 - Best Time to Buy and Sell Stock Visualizer
+                </span>
             </a>
-        </li>
-        
-        </ul>
-    </div>
-    
+            </div></div>
+        <div class="topic level-3">
+            <h3>
+                Strings Dp
+            </h3>
+        <div class="cards">
+            <a class="card" href="DP/Strings DP/Delete Operation for Two Strings.html">
+                <span class="num">
+                    #15
+                </span>
+
+                <span class="title">
+                    LeetCode 583 - Delete Operation for Two Strings
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Strings DP/Distinct Subsequences.html">
+                <span class="num">
+                    #16
+                </span>
+
+                <span class="title">
+                    LeetCode 115 - Distinct Subsequences Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Strings DP/Edit Distance.html">
+                <span class="num">
+                    #17
+                </span>
+
+                <span class="title">
+                    LeetCode 72 - Edit Distance Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Strings DP/Longest Common Subsequence.html">
+                <span class="num">
+                    #18
+                </span>
+
+                <span class="title">
+                    LeetCode - Longest Common Subsequence Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Strings DP/Longest Palindromic Subsequence (LPS).html">
+                <span class="num">
+                    #19
+                </span>
+
+                <span class="title">
+                    Python - Longest Palindromic Subsequence Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Strings DP/min_insertions_to_palindrome.html">
+                <span class="num">
+                    #20
+                </span>
+
+                <span class="title">
+                    LeetCode 1312 - Minimum Insertion Steps to Make a String Palindrome
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Strings DP/Shortest Common Supersequence (SCS).html">
+                <span class="num">
+                    #21
+                </span>
+
+                <span class="title">
+                    LeetCode 1092 - Shortest Common Supersequence Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Strings DP/Wildcard Matching.html">
+                <span class="num">
+                    #22
+                </span>
+
+                <span class="title">
+                    LeetCode 44 - Wildcard Matching Visualizer
+                </span>
+            </a>
+            </div></div>
+        <div class="topic level-3">
+            <h3>
+                Subsequence Dp
+            </h3>
+        <div class="cards">
+            <a class="card" href="DP/Subsequence DP/1D BFS Coin Change 322.html">
+                <span class="num">
+                    #23
+                </span>
+
+                <span class="title">
+                    LeetCode 322 - Coin Change (BFS) Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Subsequence DP/1D DP Target Sum 494.html">
+                <span class="num">
+                    #24
+                </span>
+
+                <span class="title">
+                    LeetCode 494 - Target Sum (1D DP) Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="DP/Subsequence DP/2D DP Partition Equal Subset Sum 416.html">
+                <span class="num">
+                    #25
+                </span>
+
+                <span class="title">
+                    LeetCode 416 - Partition Equal Subset Sum (2D DP)
+                </span>
+            </a>
+            </div></div></div>
+        <div class="topic level-2">
+            <h2>
+                Graph
+            </h2>
+        <div class="cards">
+            <a class="card" href="graph/01-matrix-542.html">
+                <span class="num">
+                    #26
+                </span>
+
+                <span class="title">
+                    LeetCode 542 - 01 Matrix Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/articulation-point critical vetrex.html">
+                <span class="num">
+                    #27
+                </span>
+
+                <span class="title">
+                    Articulation Points (Tarjan&#x27;s Algorithm) Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/binary-matrix-shartest-path-1091.html">
+                <span class="num">
+                    #28
+                </span>
+
+                <span class="title">
+                    LeetCode 1091 - Shortest Path Binary Matrix (Lee Algorithm)
+                </span>
+            </a>
+            
+            <a class="card" href="graph/bridges-critical-edges.html">
+                <span class="num">
+                    #29
+                </span>
+
+                <span class="title">
+                    LeetCode 1192 - Critical Connections (Tarjan&#x27;s Algorithm)
+                </span>
+            </a>
+            
+            <a class="card" href="graph/DSU on a matrix.html">
+                <span class="num">
+                    #30
+                </span>
+
+                <span class="title">
+                    LeetCode 827 - Making A Large Island (DSU)
+                </span>
+            </a>
+            
+            <a class="card" href="graph/Find the City With the Smallest Number of Neighbors at a Threshold Distance 1334.html">
+                <span class="num">
+                    #31
+                </span>
+
+                <span class="title">
+                    LeetCode 1334 - Floyd-Warshall Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/k stops cheapest flight - 787.html">
+                <span class="num">
+                    #32
+                </span>
+
+                <span class="title">
+                    LeetCode 787 - Cheapest Flights Within K Stops
+                </span>
+            </a>
+            
+            <a class="card" href="graph/Kahns-BFS-207.html">
+                <span class="num">
+                    #33
+                </span>
+
+                <span class="title">
+                    LeetCode 207 - Kahn&#x27;s Algorithm (BFS) Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/Kahns-DFS-207.html">
+                <span class="num">
+                    #34
+                </span>
+
+                <span class="title">
+                    LeetCode 207 - Java DFS Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/kosaraju-scc.html">
+                <span class="num">
+                    #35
+                </span>
+
+                <span class="title">
+                    Kosaraju&#x27;s Algorithm (SCC) Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/kruskal-dsu-mst.html">
+                <span class="num">
+                    #36
+                </span>
+
+                <span class="title">
+                    Kruskal&#x27;s Algorithm (DSU) - MST Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/n ops to connect a netwrok 1319.html">
+                <span class="num">
+                    #37
+                </span>
+
+                <span class="title">
+                    LeetCode 1319 - Network Connected (DSU) Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/oranges-level-order-994.html">
+                <span class="num">
+                    #38
+                </span>
+
+                <span class="title">
+                    LeetCode 994 - Rotting Oranges Visualizer
+                </span>
+            </a>
+            
+            <a class="card" href="graph/prims.html">
+                <span class="num">
+                    #39
+                </span>
+
+                <span class="title">
+                    Prim&#x27;s Algorithm - Minimum Spanning Tree Visualizer
+                </span>
+            </a>
+            </div></div>
+        <div class="topic level-2">
+            <h2>
+                Trie
+            </h2>
+        <div class="cards">
+            <a class="card" href="trie/Implement Trie (Prefix Tree).html">
+                <span class="num">
+                    #40
+                </span>
+
+                <span class="title">
+                    LeetCode 208 - Implement Trie Visualizer
+                </span>
+            </a>
+            </div></div>
+
 </body>
 </html>
