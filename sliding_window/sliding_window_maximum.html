@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 239 - Sliding Window Maximum Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for added/success */
+        --active: #ff9800;     /* Orange for current i */
+        --neighbor: #2196f3;   /* Blue for window range */
+        --danger: #f44336;     /* Red for removed/popped */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+    textarea { resize: none; font-family: Consolas, monospace; line-height: 1.4; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 500px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 4px; }
+    
+    .array-container { display: flex; gap: 6px; overflow-x: auto; padding: 5px 0;}
+    .array-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0;}
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; font-family: Consolas; }
+    .array-cell {
+        width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 6px; background: #1e1e1e; font-weight: bold; font-size: 15px;
+        transition: all 0.3s; font-family: Consolas; color: #d4d4d4; position: relative;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-current { border-color: var(--active); box-shadow: 0 0 12px rgba(255, 152, 0, 0.6); color: var(--active); transform: scale(1.1); z-index: 2;}
+    .cell-window { background: rgba(33, 150, 243, 0.15); border-color: var(--neighbor); color: #fff;}
+    .cell-result { background: rgba(76, 175, 80, 0.15); border-color: var(--accent); color: var(--accent); transform: scale(1.1); box-shadow: 0 0 10px rgba(76, 175, 80, 0.4); z-index: 2;}
+    .cell-empty { color: #555; font-style: italic;}
+
+    /* Deque */
+    .deque-container { display: flex; gap: 8px; overflow-x: auto; padding: 10px 5px; min-height: 50px; background: #1a1a1a; border-radius: 6px; border: 1px solid #333;}
+    .deque-item {
+        background: #2d2d2d; color: #d4d4d4; padding: 6px 12px; border-radius: 4px; font-family: Consolas; font-size: 13px;
+        display: flex; flex-direction: column; align-items: center; border: 1px solid #555; transition: all 0.3s; flex-shrink: 0;
+    }
+    .deque-val { font-size: 18px; font-weight: bold; color: var(--active); margin-top: 2px;}
+    .deque-added { border-color: var(--accent); box-shadow: 0 0 8px rgba(76, 175, 80, 0.5); }
+    .deque-removed { border-color: var(--danger); background: rgba(244, 67, 54, 0.1); color: var(--danger); text-decoration: line-through; opacity: 0.7;}
+
+    /* Log */
+    .log {
+        height: 120px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example 1</option>
+            <option value="tc2">2. Single Element</option>
+            <option value="tc3">3. Monotonic Decreasing</option>
+            <option value="tc4">4. Window = Array Size</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>a (Array):</label>
+        <input id="numsInput" type="text" style="width: 200px;" value="1,3,-1,-3,5,3,6,7">
+    </div>
+
+    <div class="header-group">
+        <label>k (Window):</label>
+        <input id="kInput" type="number" style="width: 40px;" value="3" min="1">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (MONOTONIC QUEUE)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Time Complexity: O(N)</strong><br>
+                Every element from the array is added to the Deque exactly once and removed at most once. Amortized time per element is O(1).<br><br>
+                <strong>Space Complexity: O(K)</strong><br>
+                The Deque `q` stores at most `k` elements at any given time (the indices of elements in the current window). The result array `r` takes O(N - K + 1) space.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div class="var-container">
+                <div class="var-box">Current Index i<div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+                <div class="var-box">Current Value a[i]<div class="var-value" id="val-ai" style="color:white;">-</div></div>
+                <div class="var-box">Result Index ri<div class="var-value" id="val-ri" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Input Array a[] <span style="font-size: 10px; color: var(--neighbor); font-weight: normal;">(Highlighted = Window)</span></h3>
+            </div>
+            <div id="numsArray" class="array-container" style="margin-bottom: 20px;"></div>
+
+            <h3 style="margin-bottom: 5px;">Deque q (Stores Indices, Displays Values)</h3>
+            <div id="deque" class="deque-container" style="margin-bottom: 20px;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Result Array r[]</h3>
+            </div>
+            <div id="resultArray" class="array-container"></div>
+        </div>
+
+        <div class="panel">
+            <h3>Execution Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "public int[] maxSlidingWindow(int[] a, int k) {        ",
+    "    if (a == null || k <= 0) {",
+    "        return new int[0];",
+    "    }",
+    "    int n = a.length;",
+    "    int[] r = new int[n-k+1];",
+    "    int ri = 0;",
+    "    // store index",
+    "    Deque<Integer> q = new ArrayDeque<>();",
+    "    for (int i = 0; i < a.length; i++) {",
+    "        // remove numbers out of range k",
+    "        while (!q.isEmpty() && q.peek() < i - k + 1) {",
+    "            q.poll();",
+    "        }",
+    "        // remove smaller numbers in k range as they are useless",
+    "        while (!q.isEmpty() && a[q.peekLast()] < a[i]) {",
+    "            q.pollLast();",
+    "        }",
+    "        // q contains index... r contains content",
+    "        q.offer(i);",
+    "        if (i >= k - 1) {",
+    "            r[ri++] = a[q.peek()];",
+    "        }",
+    "    }",
+    "    return r;",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { a: "1,3,-1,-3,5,3,6,7", k: 3 },
+    tc2: { a: "1", k: 1 },
+    tc3: { a: "5,4,3,2,1", k: 2 },
+    tc4: { a: "9,11", k: 2 }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i+1}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i+1}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("numsInput").value = tc.a;
+    document.getElementById("kInput").value = tc.k;
+}
+
+function* simulateSlidingWindow() {
+    let inputStr = document.getElementById("numsInput").value;
+    let a = inputStr.split(',').map(Number).filter(n => !isNaN(n));
+    let k = parseInt(document.getElementById("kInput").value);
+    
+    if (a.length === 0 || k <= 0) {
+        yield { line: 3, msg: "Invalid input. Returning empty array.", type: "danger", a, k, rState: [], qState: [] };
+        return;
+    }
+
+    let n = a.length;
+    let r = new Array(n - k + 1).fill(null);
+    let q = []; 
+    let ri = 0;
+
+    const snap = (line, msg, type="info", actionObj={}) => ({
+        line, msg, type, i: actionObj.i !== undefined ? actionObj.i : null, a, k,
+        windowStart: actionObj.i !== undefined ? Math.max(0, actionObj.i - k + 1) : null,
+        windowEnd: actionObj.i !== undefined ? actionObj.i : null,
+        ri,
+        qState: [...q], 
+        rState: [...r], 
+        ...actionObj
+    });
+
+    yield snap(9, `Initialized arrays. Starting iteration through array 'a'.`);
+
+    for (let i = 0; i < n; i++) {
+        let wStart = Math.max(0, i - k + 1);
+        yield snap(10, `i = ${i}, a[${i}] = ${a[i]}. Window bounds: [${wStart} ... ${i}]`, "info", {i});
+
+        // Remove out of range
+        while (q.length > 0 && q[0] < i - k + 1) {
+            let removed = q.shift();
+            yield snap(12, `Index ${removed} (value: ${a[removed]}) is out of window [${wStart} ... ${i}]. Polling from front of Deque.`, "danger", {i, dequeRemoveFront: removed});
+        }
+
+        // Remove smaller numbers
+        while (q.length > 0 && a[q[q.length - 1]] < a[i]) {
+            let removed = q.pop();
+            yield snap(16, `a[${removed}] = ${a[removed]} < a[${i}] = ${a[i]}. Polling from back to maintain monotonic decreasing order.`, "update", {i, dequeRemoveBack: removed});
+        }
+
+        // Add current
+        q.push(i);
+        yield snap(19, `Offered index ${i} (value: ${a[i]}) to back of Deque.`, "success", {i, dequeAdd: i});
+
+        // Add to result
+        if (i >= k - 1) {
+            yield snap(20, `Window is fully formed (i >= k-1). Adding max to result array.`, "info", {i});
+            r[ri] = a[q[0]];
+            yield snap(21, `Max in window is at q.peek() = index ${q[0]}, value = ${a[q[0]]}. r[${ri}] = ${a[q[0]]}.`, "success", {i, resultAdd: ri});
+            ri++;
+        }
+    }
+    yield snap(24, `Iteration complete. Returning result array r.`, "success");
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateSlidingWindow();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function applyEventData(e) {
+    // Variables
+    document.getElementById("val-i").innerText = e.i !== null ? e.i : "-";
+    document.getElementById("val-ai").innerText = e.i !== null ? e.a[e.i] : "-";
+    document.getElementById("val-ri").innerText = e.ri !== undefined ? e.ri : "-";
+
+    // Nums Array
+    const renderNums = () => e.a.map((val, idx) => {
+        let cls = "";
+        if (e.windowStart !== null && e.windowEnd !== null) {
+            if (idx >= e.windowStart && idx <= e.windowEnd) cls = "cell-window";
+        }
+        if (idx === e.i) cls = "cell-current";
+        
+        return `<div class="array-item"><span class="array-idx">${idx}</span><div class="array-cell ${cls}">${val}</div></div>`;
+    }).join('');
+    document.getElementById("numsArray").innerHTML = renderNums();
+
+    // Deque Render
+    let dequeHtml = "";
+    
+    // If we have a front removal, render it explicitly as removed
+    if (e.dequeRemoveFront !== undefined) {
+        dequeHtml += `<div class="deque-item deque-removed">
+            <span>idx: ${e.dequeRemoveFront}</span>
+            <span class="deque-val" style="color:var(--danger)">${e.a[e.dequeRemoveFront]}</span>
+        </div>`;
+    }
+    
+    // Normal items in queue
+    if (e.qState) {
+        e.qState.forEach(idx => {
+            let cls = "deque-item";
+            if (idx === e.dequeAdd) cls += " deque-added";
+            dequeHtml += `<div class="${cls}">
+                <span>idx: ${idx}</span>
+                <span class="deque-val">${e.a[idx]}</span>
+            </div>`;
+        });
+    }
+
+    // If we have a back removal, render it explicitly as removed at the end
+    if (e.dequeRemoveBack !== undefined) {
+        dequeHtml += `<div class="deque-item deque-removed">
+            <span>idx: ${e.dequeRemoveBack}</span>
+            <span class="deque-val" style="color:var(--danger)">${e.a[e.dequeRemoveBack]}</span>
+        </div>`;
+    }
+
+    if (dequeHtml === "") dequeHtml = `<div style="color:#777; font-style:italic; padding-top:15px; margin-left: 10px;">Empty</div>`;
+    document.getElementById("deque").innerHTML = dequeHtml;
+
+    // Result Array
+    if (e.rState) {
+        const renderResult = () => e.rState.map((val, idx) => {
+            let display = val !== null ? val : "";
+            let cls = val === null ? "cell-empty" : "";
+            if (idx === e.resultAdd) cls += "cell-result";
+            
+            return `<div class="array-item"><span class="array-idx">${idx}</span><div class="array-cell ${cls}">${display}</div></div>`;
+        }).join('');
+        document.getElementById("resultArray").innerHTML = renderResult();
+    }
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1000); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>

@@ -535,4 +535,4 @@ INDEX_FILE.write_text(
 print(
     f"Generated index.html with "
     f"{len(html_files)} visualizations."
-)
+)m
