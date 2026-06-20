@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 875 - Koko Eating Bananas Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for success */
+        --active: #ff9800;     /* Orange for mid/speed */
+        --neighbor: #2196f3;   /* Blue for min speed */
+        --purple: #9c27b0;     /* Purple for max speed */
+        --danger: #f44336;     /* Red for discarded */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 550px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; margin-top: 4px; font-family: Consolas;}
+    
+    .array-container { display: flex; gap: 6px; overflow-x: auto; padding: 5px 0 35px 0;}
+    .array-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; position: relative;}
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; font-family: Consolas; }
+    .array-cell {
+        width: 55px; height: 50px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #555; border-radius: 6px; background: #1e1e1e; font-weight: bold; font-size: 16px;
+        transition: all 0.3s; font-family: Consolas; color: #d4d4d4;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-pile { background: rgba(33, 150, 243, 0.1); border-color: #555; color: #fff;}
+    .cell-active { border-color: var(--active); box-shadow: 0 0 12px rgba(255, 152, 0, 0.6); color: var(--active); transform: scale(1.1); z-index: 5;}
+    .cell-danger { border-color: var(--danger); background: rgba(244, 67, 54, 0.15); color: var(--danger); box-shadow: 0 0 12px rgba(244, 67, 54, 0.6); transform: scale(1.1); z-index: 5;}
+    
+    .ptr-label {
+        position: absolute; bottom: -22px; font-size: 12px; font-weight: bold; font-family: Consolas; white-space: nowrap; color: var(--active);
+    }
+    .ptr-hrs { color: var(--accent); }
+    .ptr-danger { color: var(--danger); }
+
+    /* Phase UI */
+    .phase-indicator {
+        padding: 8px 12px; background: #2d2d2d; border-radius: 6px; border: 1px solid #444; font-weight: bold;
+        text-align: center; margin-bottom: 15px; color: var(--active); font-size: 15px; font-family: Consolas;
+    }
+
+    /* Log */
+    .log {
+        height: 160px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example 1 (h=8)</option>
+            <option value="tc2">2. LC Example 2 (h=5)</option>
+            <option value="tc3">3. LC Example 3 (h=6)</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>Piles[]:</label>
+        <input id="pilesInput" type="text" style="width: 150px;" value="3,6,7,11">
+    </div>
+
+    <div class="header-group">
+        <label>Hours (h):</label>
+        <input id="hInput" type="number" style="width: 50px;" value="8">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run Binary Search</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (BINARY SEARCH ON ANSWER)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Core Logic:</strong><br>
+                The minimum possible eating speed is 1. The maximum speed is the largest pile size (eating faster won't save any more hours per pile). We binary search within this range `[1, max_pile]` to find the minimum speed that satisfies the condition.<br><br>
+                <strong>Time Complexity: O(N log M)</strong><br>
+                Where <code>N</code> is the number of piles and <code>M</code> is the maximum pile size. The binary search takes <code>O(log M)</code> steps. In each step, verifying if Koko can finish takes <code>O(N)</code> time.<br><br>
+                <strong>Space Complexity: O(1)</strong><br>
+                We only use primitive variables to keep track of speeds and hours.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div id="phaseIndicator" class="phase-indicator">Waiting to Start</div>
+
+            <div class="var-container">
+                <div class="var-box">Allowed Hours (h)<div class="var-value" id="val-h" style="color:white;">-</div></div>
+                <div class="var-box">minSpeed (left)<div class="var-value" id="val-min" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">currentSpeed (mid)<div class="var-value" id="val-curr" style="color:var(--active);">-</div></div>
+                <div class="var-box">maxSpeed (right)<div class="var-value" id="val-max" style="color:var(--purple);">-</div></div>
+                <div class="var-box">Hours Needed<div class="var-value" id="val-hrs" style="color:white;">-</div></div>
+                <div class="var-box" style="border-color: var(--accent);">Optimal Speed<div class="var-value" id="val-opt" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Piles Array <span style="font-size: 10px; color: var(--accent); font-weight: normal;">(Shows hours to eat current pile)</span></h3>
+            </div>
+            <div id="pilesArray" class="array-container" style="margin-bottom: 10px;"></div>
+        </div>
+
+        <div class="panel" style="flex: 1;">
+            <h3>Execution Log</h3>
+            <div class="log" id="log" style="height: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "class Solution {",
+    "    public int minEatingSpeed(int[] piles, int h) {",
+    "        // Step 1: Establish the search boundaries",
+    "        int minSpeed = 1;",
+    "        int maxSpeed = 0;",
+    "        for (int pile : piles) {",
+    "            if (pile > maxSpeed) {",
+    "                maxSpeed = pile;",
+    "            }",
+    "        }",
+    "        ",
+    "        int optimalSpeed = maxSpeed;",
+    "        ",
+    "        // Step 2: Binary Search to find the lowest valid speed",
+    "        while (minSpeed <= maxSpeed) {",
+    "            // Safe midpoint calculation to avoid integer overflow",
+    "            int currentSpeed = minSpeed + (maxSpeed - minSpeed) / 2;",
+    "            ",
+    "            if (canFinishInTime(piles, currentSpeed, h)) {",
+    "                // If she can finish at this speed, record it, but try to find a slower one",
+    "                optimalSpeed = currentSpeed;",
+    "                maxSpeed = currentSpeed - 1;",
+    "            } else {",
+    "                // If she cannot finish, she must eat faster",
+    "                minSpeed = currentSpeed + 1;",
+    "            }",
+    "        }",
+    "        ",
+    "        return optimalSpeed;",
+    "    }",
+    "    ",
+    "    private boolean canFinishInTime(int[] piles, int speed, int maxHours) {",
+    "        long hoursNeeded = 0; // Use long to prevent overflow",
+    "        ",
+    "        for (int pile : piles) {",
+    "            // Integer Ceil Trick: Highly optimized alternative to Math.ceil()",
+    "            hoursNeeded += (pile + speed - 1) / speed;",
+    "            ",
+    "            // Early Exit Optimization",
+    "            if (hoursNeeded > maxHours) {",
+    "                return false;",
+    "            }",
+    "        }",
+    "        ",
+    "        return hoursNeeded <= maxHours;",
+    "    }",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { p: "3,6,7,11", h: 8 },
+    tc2: { p: "30,11,23,4,20", h: 5 },
+    tc3: { p: "30,11,23,4,20", h: 6 }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i+1}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i+1}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("pilesInput").value = tc.p;
+    document.getElementById("hInput").value = tc.h;
+}
+
+function* simulateBinarySearch() {
+    let inputStr = document.getElementById("pilesInput").value;
+    let piles = inputStr.split(',').map(Number).filter(n => !isNaN(n));
+    let h = parseInt(document.getElementById("hInput").value);
+    let n = piles.length;
+    
+    if (n === 0) return;
+
+    let minSpeed = 1;
+    let maxSpeed = Math.max(...piles);
+    let optimalSpeed = maxSpeed;
+
+    const snap = (line, msg, type="info", actionObj={}) => ({
+        line, msg, type,
+        piles: [...piles], h,
+        minSpeed, maxSpeed, optimalSpeed,
+        currentSpeed: actionObj.currentSpeed !== undefined ? actionObj.currentSpeed : null,
+        hoursNeeded: actionObj.hoursNeeded !== undefined ? actionObj.hoursNeeded : null,
+        pileIdx: actionObj.pileIdx !== undefined ? actionObj.pileIdx : null,
+        pileHours: actionObj.pileHours !== undefined ? actionObj.pileHours : null,
+        isDanger: actionObj.isDanger !== undefined ? actionObj.isDanger : false
+    });
+
+    yield snap(4, `Initializing search boundaries...`);
+    yield snap(5, `minSpeed = 1. Calculating maxSpeed by finding the largest pile.`);
+    yield snap(11, `Found maxSpeed = ${maxSpeed}. Setting initial optimalSpeed = ${optimalSpeed}.`);
+
+    while (minSpeed <= maxSpeed) {
+        yield snap(14, `Checking condition minSpeed <= maxSpeed (${minSpeed} <= ${maxSpeed}). True, entering loop.`);
+        
+        let currentSpeed = minSpeed + Math.floor((maxSpeed - minSpeed) / 2);
+        yield snap(16, `Calculated currentSpeed (mid) = ${minSpeed} + (${maxSpeed} - ${minSpeed})/2 = ${currentSpeed}.`, "update", { currentSpeed });
+
+        yield snap(18, `Calling canFinishInTime(piles, speed=${currentSpeed}, maxHours=${h}).`, "info", { currentSpeed });
+
+        let hoursNeeded = 0;
+        let possible = true;
+        
+        for (let i = 0; i < n; i++) {
+            let pile = piles[i];
+            let hrs = Math.ceil(pile / currentSpeed);
+            hoursNeeded += hrs;
+            
+            yield snap(40, `Pile ${i} has ${pile} bananas. At speed ${currentSpeed}, it takes Math.ceil(${pile}/${currentSpeed}) = ${hrs} hours. Total hours = ${hoursNeeded}.`, "info", { currentSpeed, pileIdx: i, pileHours: hrs, hoursNeeded });
+
+            if (hoursNeeded > h) {
+                yield snap(43, `Total hours (${hoursNeeded}) exceeded max allowed hours (${h}). Early exit from loop!`, "danger", { currentSpeed, pileIdx: i, hoursNeeded, isDanger: true });
+                possible = false;
+                break;
+            }
+        }
+
+        if (possible) {
+            yield snap(48, `Koko CAN finish in ${hoursNeeded} hours (<= ${h}). possible = true.`, "success", { currentSpeed, hoursNeeded });
+            optimalSpeed = currentSpeed;
+            yield snap(20, `Recording optimalSpeed = ${optimalSpeed}. We might be able to eat slower...`, "update", { currentSpeed, hoursNeeded });
+            
+            maxSpeed = currentSpeed - 1;
+            yield snap(21, `...so discarding right half. maxSpeed = currentSpeed - 1 = ${maxSpeed}.`, "update", { currentSpeed, hoursNeeded });
+        } else {
+            yield snap(44, `Koko CANNOT finish in time at speed ${currentSpeed}.`, "danger", { currentSpeed, hoursNeeded });
+            minSpeed = currentSpeed + 1;
+            yield snap(25, `She must eat faster. Discarding left half. minSpeed = currentSpeed + 1 = ${minSpeed}.`, "danger", { currentSpeed, hoursNeeded });
+        }
+    }
+
+    yield snap(14, `Loop terminated. minSpeed (${minSpeed}) > maxSpeed (${maxSpeed}).`, "danger");
+    yield snap(29, `Returning optimalSpeed: ${optimalSpeed}.`, "success");
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateBinarySearch();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function applyEventData(e) {
+    if (e.currentSpeed !== null) {
+        document.getElementById("phaseIndicator").innerText = `Testing Speed = ${e.currentSpeed} bananas/hr`;
+    } else {
+        document.getElementById("phaseIndicator").innerText = `Setting Bounds`;
+    }
+    
+    document.getElementById("val-h").innerText = e.h;
+    document.getElementById("val-min").innerText = e.minSpeed !== null ? e.minSpeed : "-";
+    document.getElementById("val-curr").innerText = e.currentSpeed !== null ? e.currentSpeed : "-";
+    document.getElementById("val-max").innerText = e.maxSpeed !== null ? e.maxSpeed : "-";
+    document.getElementById("val-opt").innerText = e.optimalSpeed !== null ? e.optimalSpeed : "-";
+    
+    let hrsEl = document.getElementById("val-hrs");
+    hrsEl.innerText = e.hoursNeeded !== null ? e.hoursNeeded : "-";
+    if (e.hoursNeeded !== null && e.hoursNeeded > e.h) {
+        hrsEl.style.color = "var(--danger)";
+    } else {
+        hrsEl.style.color = "white";
+    }
+
+    // Array Visualization
+    if (e.piles && e.piles.length > 0) {
+        const renderArray = () => e.piles.map((val, idx) => {
+            let cls = "cell-pile";
+            let lblHtml = "";
+
+            if (e.pileIdx === idx) {
+                if (e.isDanger) {
+                    cls = "cell-danger";
+                    lblHtml = `<div class="ptr-label ptr-danger">+${e.pileHours} hrs</div>`;
+                } else {
+                    cls = "cell-active";
+                    lblHtml = `<div class="ptr-label ptr-hrs">+${e.pileHours} hrs</div>`;
+                }
+            }
+
+            return `<div class="array-item"><span class="array-idx">Pile ${idx}</span><div class="array-cell ${cls}">${val}${lblHtml}</div></div>`;
+        }).join('');
+        document.getElementById("pilesArray").innerHTML = renderArray();
+    }
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1500); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>
