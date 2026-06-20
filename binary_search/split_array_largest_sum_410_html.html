@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 410 - Split Array Largest Sum Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for success */
+        --active: #ff9800;     /* Orange for mid/threshold */
+        --neighbor: #2196f3;   /* Blue for min speed/low */
+        --purple: #9c27b0;     /* Purple for max speed/high */
+        --danger: #f44336;     /* Red for discarded/failed */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 550px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; margin-top: 4px; font-family: Consolas;}
+    
+    .array-container { display: flex; gap: 4px; overflow-x: auto; padding: 5px 0 35px 0;}
+    .array-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; position: relative;}
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; font-family: Consolas; }
+    .array-cell {
+        width: 55px; height: 50px; display: flex; align-items: center; justify-content: center;
+        border: 2px solid #555; border-radius: 6px; background: #1e1e1e; font-weight: bold; font-size: 16px;
+        transition: all 0.3s; font-family: Consolas; color: #d4d4d4;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-active { border-color: var(--active); box-shadow: 0 0 12px rgba(255, 152, 0, 0.6); transform: scale(1.1); z-index: 5;}
+    .cell-cut { border-right: 4px dashed var(--danger) !important; margin-right: 4px;}
+    
+    /* Piece Colors */
+    .piece-0 { background: rgba(33, 150, 243, 0.15); border-color: rgba(33, 150, 243, 0.5);}
+    .piece-1 { background: rgba(76, 175, 80, 0.15); border-color: rgba(76, 175, 80, 0.5);}
+    .piece-2 { background: rgba(156, 39, 176, 0.15); border-color: rgba(156, 39, 176, 0.5);}
+    .piece-3 { background: rgba(255, 152, 0, 0.15); border-color: rgba(255, 152, 0, 0.5);}
+    .piece-4 { background: rgba(0, 188, 212, 0.15); border-color: rgba(0, 188, 212, 0.5);}
+    .piece-5 { background: rgba(233, 30, 99, 0.15); border-color: rgba(233, 30, 99, 0.5);}
+    
+    .ptr-label {
+        position: absolute; bottom: -22px; font-size: 12px; font-weight: bold; font-family: Consolas; white-space: nowrap; color: #aaa;
+    }
+    .sum-danger { color: var(--danger) !important; font-weight: bold;}
+    .sum-safe { color: var(--accent) !important; }
+
+    /* Phase UI */
+    .phase-indicator {
+        padding: 8px 12px; background: #2d2d2d; border-radius: 6px; border: 1px solid #444; font-weight: bold;
+        text-align: center; margin-bottom: 15px; color: var(--active); font-size: 15px; font-family: Consolas;
+    }
+
+    /* Log */
+    .log {
+        height: 160px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example 1 (7,2,5,10,8)</option>
+            <option value="tc2">2. LC Example 2 (1,2,3,4,5)</option>
+            <option value="tc3">3. Identical Elements</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>nums[]:</label>
+        <input id="numsInput" type="text" style="width: 150px;" value="7,2,5,10,8">
+    </div>
+
+    <div class="header-group">
+        <label>Splits (k):</label>
+        <input id="kInput" type="number" style="width: 50px;" value="2">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run Binary Search</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (BINARY SEARCH ON ANSWER)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Core Logic:</strong><br>
+                The smallest possible answer is the maximum element in the array (if k == nums.length). The largest possible answer is the sum of all elements (if k == 1). We binary search the answer in the range <code>[max(nums), sum(nums)]</code>.<br><br>
+                <strong>Time Complexity: O(N log S)</strong><br>
+                Where <code>N</code> is the number of elements and <code>S</code> is the sum of all elements in the array. The binary search takes <code>O(log S)</code> steps. Verifying if we can split the array takes <code>O(N)</code> time.<br><br>
+                <strong>Space Complexity: O(1)</strong><br>
+                We only use primitive variables, no extra arrays are allocated for the computation.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div id="phaseIndicator" class="phase-indicator">Waiting to Start</div>
+
+            <div class="var-container">
+                <div class="var-box">Allowed Splits (k)<div class="var-value" id="val-k" style="color:white;">-</div></div>
+                <div class="var-box">low (min sum)<div class="var-value" id="val-low" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box">mid (threshold)<div class="var-value" id="val-curr" style="color:var(--active);">-</div></div>
+                <div class="var-box">high (max sum)<div class="var-value" id="val-high" style="color:var(--purple);">-</div></div>
+            </div>
+
+            <div class="var-container">
+                <div class="var-box">Optimal Sum<div class="var-value" id="val-opt" style="color:var(--accent);">-</div></div>
+                <div class="var-box">Pieces Formed<div class="var-value" id="val-pieces" style="color:white;">-</div></div>
+                <div class="var-box">Current Piece Sum<div class="var-value" id="val-sum" style="color:white;">-</div></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Array splitting visualization <span style="font-size: 10px; color: var(--accent); font-weight: normal;">(Colors indicate subsets)</span></h3>
+            </div>
+            <div id="numsArray" class="array-container" style="margin-bottom: 10px;"></div>
+        </div>
+
+        <div class="panel" style="flex: 1;">
+            <h3>Execution Log</h3>
+            <div class="log" id="log" style="height: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "class Solution {",
+    "    public int splitArray(int[] nums, int k) {",
+    "        int maxElement = 0;",
+    "        int totalSum = 0;",
+    "        ",
+    "        // 1. Establish the absolute correct boundaries",
+    "        for (int num : nums) {",
+    "            maxElement = Math.max(maxElement, num);",
+    "            totalSum += num;",
+    "        }",
+    "        ",
+    "        int low = maxElement;",
+    "        int high = totalSum;",
+    "        int optimalLargestSum = 0;",
+    "        ",
+    "        // 2. Binary Search on the Answer",
+    "        while (low <= high) {",
+    "            int mid = low + (high - low) / 2;",
+    "            ",
+    "            if (canSplit(nums, k, mid)) {",
+    "                // If works, record it, but try to find a SMALLER max sum",
+    "                optimalLargestSum = mid;",
+    "                high = mid - 1; ",
+    "            } else {",
+    "                // If it doesn't work, we must increase the threshold",
+    "                low = mid + 1; ",
+    "            }",
+    "        }",
+    "        ",
+    "        return optimalLargestSum;",
+    "    }",
+    "    ",
+    "    private boolean canSplit(int[] nums, int k, int threshold) {",
+    "        int currentPieceSum = 0;",
+    "        int piecesRequired = 1;",
+    "        ",
+    "        for (int num : nums) {",
+    "            // If adding the next number exceeds our allowed threshold",
+    "            if (currentPieceSum + num > threshold) {",
+    "                // We must cut here and start a new piece",
+    "                piecesRequired++;",
+    "                currentPieceSum = num;",
+    "                ",
+    "                // Early Exit: If we've made too many cuts, threshold fails",
+    "                if (piecesRequired > k) {",
+    "                    return false;",
+    "                }",
+    "            } else {",
+    "                // Safely add the number to the current piece",
+    "                currentPieceSum += num;",
+    "            }",
+    "        }",
+    "        ",
+    "        return true;",
+    "    }",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { a: "7,2,5,10,8", k: 2 },
+    tc2: { a: "1,2,3,4,5", k: 2 },
+    tc3: { a: "3,3,3,3,3", k: 3 }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i+1}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i+1}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("numsInput").value = tc.a;
+    document.getElementById("kInput").value = tc.k;
+}
+
+function* simulateBinarySearch() {
+    let inputStr = document.getElementById("numsInput").value;
+    let nums = inputStr.split(',').map(Number).filter(n => !isNaN(n));
+    let k = parseInt(document.getElementById("kInput").value);
+    let n = nums.length;
+    
+    if (n === 0) return;
+
+    let maxElement = 0;
+    let totalSum = 0;
+    for (let num of nums) {
+        maxElement = Math.max(maxElement, num);
+        totalSum += num;
+    }
+
+    let low = maxElement;
+    let high = totalSum;
+    let optimalLargestSum = 0;
+
+    const snap = (line, msg, type="info", actionObj={}) => ({
+        line, msg, type,
+        nums: [...nums], k, n,
+        low, high, optimalLargestSum,
+        mid: actionObj.mid !== undefined ? actionObj.mid : null,
+        piecesRequired: actionObj.piecesRequired !== undefined ? actionObj.piecesRequired : null,
+        currentPieceSum: actionObj.currentPieceSum !== undefined ? actionObj.currentPieceSum : null,
+        activeIdx: actionObj.activeIdx !== undefined ? actionObj.activeIdx : null,
+        pieceAssignments: actionObj.pieceAssignments ? [...actionObj.pieceAssignments] : [],
+        cuts: actionObj.cuts ? [...actionObj.cuts] : []
+    });
+
+    yield snap(7, `Calculating boundaries... maxElement = ${maxElement}, totalSum = ${totalSum}`);
+    yield snap(12, `low = ${low} (min possible sum). high = ${high} (max possible sum).`);
+
+    while (low <= high) {
+        yield snap(17, `Checking condition low <= high (${low} <= ${high}). True, entering loop.`);
+        
+        let mid = low + Math.floor((high - low) / 2);
+        yield snap(18, `Calculated mid (threshold) = ${low} + (${high} - ${low})/2 = ${mid}.`, "update", { mid });
+
+        yield snap(20, `Calling canSplit(nums, k=${k}, threshold=${mid}).`, "info", { mid });
+
+        let currentPieceSum = 0;
+        let piecesRequired = 1;
+        let possible = true;
+        let pieceAssignments = new Array(n).fill(0);
+        let cuts = [];
+        
+        yield snap(36, `Initializing piecesRequired = 1, currentPieceSum = 0.`, "info", { mid, currentPieceSum, piecesRequired, pieceAssignments, cuts });
+
+        for (let i = 0; i < n; i++) {
+            let num = nums[i];
+            
+            yield snap(39, `Evaluating nums[${i}] = ${num}. Checking if ${currentPieceSum} + ${num} > ${mid}`, "info", { mid, currentPieceSum, piecesRequired, activeIdx: i, pieceAssignments, cuts });
+
+            if (currentPieceSum + num > mid) {
+                piecesRequired++;
+                currentPieceSum = num;
+                cuts.push(i - 1); // A cut happened after the previous element
+                
+                // Assign new piece ID
+                pieceAssignments[i] = piecesRequired - 1;
+                
+                yield snap(42, `Sum exceeded threshold! Cutting before index ${i}. piecesRequired = ${piecesRequired}, new currentPieceSum = ${num}.`, "danger", { mid, currentPieceSum, piecesRequired, activeIdx: i, pieceAssignments, cuts });
+
+                if (piecesRequired > k) {
+                    yield snap(47, `piecesRequired (${piecesRequired}) > k (${k}). Cannot split with threshold ${mid}!`, "danger", { mid, currentPieceSum, piecesRequired, activeIdx: i, pieceAssignments, cuts });
+                    possible = false;
+                    break;
+                }
+            } else {
+                currentPieceSum += num;
+                pieceAssignments[i] = piecesRequired - 1;
+                yield snap(51, `Safely adding ${num}. currentPieceSum becomes ${currentPieceSum}.`, "success", { mid, currentPieceSum, piecesRequired, activeIdx: i, pieceAssignments, cuts });
+            }
+        }
+
+        if (possible) {
+            yield snap(55, `We CAN split into ${piecesRequired} pieces (<= ${k}) with threshold ${mid}.`, "success", { mid, currentPieceSum, piecesRequired, pieceAssignments, cuts });
+            optimalLargestSum = mid;
+            yield snap(22, `Recording optimalLargestSum = ${optimalLargestSum}. We might find a smaller max sum...`, "update", { mid, currentPieceSum, piecesRequired, pieceAssignments, cuts });
+            
+            high = mid - 1;
+            yield snap(23, `...so discarding right half. high = mid - 1 = ${high}.`, "update", { mid, currentPieceSum, piecesRequired, pieceAssignments, cuts });
+        } else {
+            low = mid + 1;
+            yield snap(26, `We MUST increase threshold. Discarding left half. low = mid + 1 = ${low}.`, "danger", { mid, currentPieceSum, piecesRequired, pieceAssignments, cuts });
+        }
+    }
+
+    yield snap(17, `Loop terminated. low (${low}) > high (${high}).`, "danger");
+    yield snap(30, `Returning optimalLargestSum: ${optimalLargestSum}.`, "success");
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateBinarySearch();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function applyEventData(e) {
+    if (e.mid !== null) {
+        document.getElementById("phaseIndicator").innerText = `Testing Threshold = ${e.mid}`;
+    } else {
+        document.getElementById("phaseIndicator").innerText = `Setting Bounds`;
+    }
+    
+    document.getElementById("val-k").innerText = e.k;
+    document.getElementById("val-low").innerText = e.low !== null ? e.low : "-";
+    document.getElementById("val-curr").innerText = e.mid !== null ? e.mid : "-";
+    document.getElementById("val-high").innerText = e.high !== null ? e.high : "-";
+    document.getElementById("val-opt").innerText = e.optimalLargestSum !== null ? e.optimalLargestSum : "-";
+    
+    let piecesEl = document.getElementById("val-pieces");
+    piecesEl.innerText = e.piecesRequired !== null ? e.piecesRequired : "-";
+    if (e.piecesRequired !== null && e.piecesRequired > e.k) {
+        piecesEl.style.color = "var(--danger)";
+    } else {
+        piecesEl.style.color = "white";
+    }
+
+    let sumEl = document.getElementById("val-sum");
+    sumEl.innerText = e.currentPieceSum !== null ? e.currentPieceSum : "-";
+    if (e.mid !== null && e.currentPieceSum !== null && e.currentPieceSum > e.mid) {
+        sumEl.style.color = "var(--danger)";
+    } else if (e.currentPieceSum !== null) {
+        sumEl.style.color = "var(--accent)";
+    }
+
+    // Array Visualization
+    if (e.nums && e.nums.length > 0) {
+        const renderArray = () => e.nums.map((val, idx) => {
+            let cls = "";
+            let lblHtml = "";
+
+            if (e.pieceAssignments && e.pieceAssignments[idx] !== undefined && e.pieceAssignments[idx] !== null) {
+                // Color by piece ID
+                let pid = e.pieceAssignments[idx] % 6; // Cycle colors
+                cls = `piece-${pid}`;
+            }
+
+            if (e.activeIdx === idx) {
+                cls += " cell-active";
+            }
+            
+            if (e.cuts && e.cuts.includes(idx)) {
+                cls += " cell-cut";
+            }
+
+            // Optional: show partial sum below active element
+            if (e.activeIdx === idx && e.currentPieceSum !== null) {
+                let sClass = (e.currentPieceSum > e.mid) ? "sum-danger" : "sum-safe";
+                lblHtml = `<div class="ptr-label ${sClass}">&#931;=${e.currentPieceSum}</div>`;
+            }
+
+            return `<div class="array-item"><span class="array-idx">idx ${idx}</span><div class="array-cell ${cls}">${val}${lblHtml}</div></div>`;
+        }).join('');
+        document.getElementById("numsArray").innerHTML = renderArray();
+    }
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1500); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>
