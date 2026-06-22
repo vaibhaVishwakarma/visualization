@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 4 - Median of Two Sorted Arrays Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for success */
+        --active: #ff9800;     /* Orange for mid/threshold */
+        --neighbor: #2196f3;   /* Blue for left side max */
+        --purple: #9c27b0;     /* Purple for right side min */
+        --danger: #f44336;     /* Red for discarded/failed */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 550px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; margin-top: 4px; font-family: Consolas;}
+    
+    .array-container { display: flex; gap: 4px; overflow-x: auto; padding: 5px 0 15px 0; align-items: center;}
+    .array-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; position: relative;}
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; font-family: Consolas; }
+    .array-cell {
+        width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+        border: 2px solid #555; border-radius: 6px; background: #1e1e1e; font-weight: bold; font-size: 16px;
+        transition: all 0.3s; font-family: Consolas; color: #d4d4d4;
+    }
+    
+    /* Partition Line */
+    .partition-line {
+        width: 4px; height: 60px; background-color: var(--active); border-radius: 2px;
+        margin: 15px 4px 0 4px; box-shadow: 0 0 10px var(--active); z-index: 10; transition: all 0.3s;
+    }
+    .partition-success { background-color: var(--accent); box-shadow: 0 0 12px var(--accent); }
+    .partition-danger { background-color: var(--danger); box-shadow: 0 0 12px var(--danger); }
+
+    /* Array Cell Highlights */
+    .cell-left-side { background: rgba(33, 150, 243, 0.1); border-color: rgba(33, 150, 243, 0.4); }
+    .cell-right-side { background: rgba(156, 39, 176, 0.1); border-color: rgba(156, 39, 176, 0.4); }
+    .cell-max-left { border-color: var(--neighbor); box-shadow: 0 0 10px rgba(33, 150, 243, 0.8); color: var(--neighbor); transform: scale(1.1); z-index: 5;}
+    .cell-min-right { border-color: var(--purple); box-shadow: 0 0 10px rgba(156, 39, 176, 0.8); color: var(--purple); transform: scale(1.1); z-index: 5;}
+    
+    .ptr-label {
+        position: absolute; bottom: -22px; font-size: 11px; font-weight: bold; font-family: Consolas; white-space: nowrap; color: #aaa;
+    }
+
+    /* Phase UI */
+    .phase-indicator {
+        padding: 8px 12px; background: #2d2d2d; border-radius: 6px; border: 1px solid #444; font-weight: bold;
+        text-align: center; margin-bottom: 15px; color: var(--active); font-size: 15px; font-family: Consolas;
+    }
+
+    /* Log */
+    .log {
+        height: 160px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    .log-info { color: var(--neighbor); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example 1 (Odd total)</option>
+            <option value="tc2">2. LC Example 2 (Even total)</option>
+            <option value="tc3">3. Empty nums1</option>
+            <option value="tc4">4. Larger nums1 input (triggers swap)</option>
+            <option value="tc5">5. All elements on one side</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>nums1:</label>
+        <input id="nums1Input" type="text" style="width: 120px;" value="1,3">
+    </div>
+
+    <div class="header-group">
+        <label>nums2:</label>
+        <input id="nums2Input" type="text" style="width: 120px;" value="2">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run Binary Search</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (BINARY SEARCH ON PARTITION)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Core Logic:</strong><br>
+                Instead of merging the arrays, we find a "partition" in both arrays such that the total number of elements on the left side equals the total number on the right. By binary searching the partition index in the smaller array, we instantly find the matching partition in the larger array.<br><br>
+                <strong>Time Complexity: O(log(min(M, N)))</strong><br>
+                We only perform binary search on the smaller array (let's say of size M). The search space halves every iteration.<br><br>
+                <strong>Space Complexity: O(1)</strong><br>
+                We only use primitive pointer variables (`low`, `high`, `partitionX`, etc.) meaning memory usage is constant.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div id="phaseIndicator" class="phase-indicator">Waiting to Start</div>
+
+            <div class="var-container">
+                <div class="var-box">low<div class="var-value" id="val-low" style="color:var(--danger);">-</div></div>
+                <div class="var-box">partitionX (cut 1)<div class="var-value" id="val-px" style="color:var(--active);">-</div></div>
+                <div class="var-box">high<div class="var-value" id="val-high" style="color:var(--danger);">-</div></div>
+                <div class="var-box">partitionY (cut 2)<div class="var-value" id="val-py" style="color:var(--active);">-</div></div>
+                <div class="var-box" style="border-color: var(--accent);">Median<div class="var-value" id="val-median" style="color:var(--accent);">-</div></div>
+            </div>
+
+            <div class="var-container">
+                <div class="var-box" style="border-color: var(--neighbor);">maxLeftX<div class="var-value" id="val-mlx" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box" style="border-color: var(--purple);">minRightX<div class="var-value" id="val-mrx" style="color:var(--purple);">-</div></div>
+                <div class="var-box" style="border-color: var(--neighbor);">maxLeftY<div class="var-value" id="val-mly" style="color:var(--neighbor);">-</div></div>
+                <div class="var-box" style="border-color: var(--purple);">minRightY<div class="var-value" id="val-mry" style="color:var(--purple);">-</div></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Smaller Array (nums1) <span id="swapIndicator" style="color:var(--danger); font-size:11px; display:none;">(Swapped from input)</span></h3>
+            </div>
+            <div id="nums1Array" class="array-container" style="margin-bottom: 10px;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Larger Array (nums2)</h3>
+            </div>
+            <div id="nums2Array" class="array-container" style="margin-bottom: 10px;"></div>
+        </div>
+
+        <div class="panel" style="flex: 1;">
+            <h3>Execution Log</h3>
+            <div class="log" id="log" style="height: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "class Solution {",
+    "    public double findMedianSortedArrays(int[] nums1, int[] nums2) {",
+    "        // Optimization: Always binary search on the smaller array",
+    "        if (nums1.length > nums2.length) {",
+    "            return findMedianSortedArrays(nums2, nums1);",
+    "        }",
+    "",
+    "        int x = nums1.length;",
+    "        int y = nums2.length;",
+    "        ",
+    "        int low = 0; ",
+    "        int high = x; ",
+    "",
+    "        while (low <= high) {",
+    "            int partitionX = low + (high - low) / 2;",
+    "            int partitionY = (x + y + 1) / 2 - partitionX;",
+    "",
+    "            int maxLeftX = (partitionX == 0) ? Integer.MIN_VALUE : nums1[partitionX - 1];",
+    "            int minRightX = (partitionX == x) ? Integer.MAX_VALUE : nums1[partitionX];",
+    "",
+    "            int maxLeftY = (partitionY == 0) ? Integer.MIN_VALUE : nums2[partitionY - 1];",
+    "            int minRightY = (partitionY == y) ? Integer.MAX_VALUE : nums2[partitionY];",
+    "",
+    "            if (maxLeftX <= minRightY && maxLeftY <= minRightX) {",
+    "                if ((x + y) % 2 == 1) {",
+    "                    return Math.max(maxLeftX, maxLeftY);",
+    "                } else {",
+    "                    return (Math.max(maxLeftX, maxLeftY) + Math.min(minRightX, minRightY)) / 2.0;",
+    "                }",
+    "            } ",
+    "            else if (maxLeftX > minRightY) {",
+    "                high = partitionX - 1;",
+    "            } else {",
+    "                low = partitionX + 1;",
+    "            }",
+    "        }",
+    "        throw new IllegalArgumentException();",
+    "    }",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: { n1: "1,3", n2: "2" },
+    tc2: { n1: "1,2", n2: "3,4" },
+    tc3: { n1: "", n2: "1" },
+    tc4: { n1: "1,3,4,6", n2: "2" },
+    tc5: { n1: "10,20", n2: "1,2,3,4" }
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i+1}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i+1}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("nums1Input").value = tc.n1;
+    document.getElementById("nums2Input").value = tc.n2;
+}
+
+function* simulateBinarySearch() {
+    let str1 = document.getElementById("nums1Input").value;
+    let str2 = document.getElementById("nums2Input").value;
+    let nums1 = str1.trim() ? str1.split(',').map(Number).filter(n => !isNaN(n)) : [];
+    let nums2 = str2.trim() ? str2.split(',').map(Number).filter(n => !isNaN(n)) : [];
+    
+    let isSwapped = false;
+    
+    const snap = (line, msg, type="info", actionObj={}) => ({
+        line, msg, type,
+        nums1: [...nums1], nums2: [...nums2], isSwapped,
+        low: actionObj.low !== undefined ? actionObj.low : null,
+        high: actionObj.high !== undefined ? actionObj.high : null,
+        partX: actionObj.partX !== undefined ? actionObj.partX : null,
+        partY: actionObj.partY !== undefined ? actionObj.partY : null,
+        maxLx: actionObj.maxLx !== undefined ? actionObj.maxLx : null,
+        minRx: actionObj.minRx !== undefined ? actionObj.minRx : null,
+        maxLy: actionObj.maxLy !== undefined ? actionObj.maxLy : null,
+        minRy: actionObj.minRy !== undefined ? actionObj.minRy : null,
+        median: actionObj.median !== undefined ? actionObj.median : null,
+        cutStatus: actionObj.cutStatus || "normal" // "normal", "success", "danger-x", "danger-y"
+    });
+
+    if (nums1.length > nums2.length) {
+        yield snap(4, "nums1 is larger than nums2. Swapping arrays to optimize binary search (always search smaller array).", "info", {low: null, high: null});
+        let temp = nums1;
+        nums1 = nums2;
+        nums2 = temp;
+        isSwapped = true;
+    }
+    
+    let x = nums1.length;
+    let y = nums2.length;
+    
+    let low = 0;
+    let high = x;
+    
+    yield snap(11, `Set search boundaries on nums1: low = 0, high = ${x}`, "info", {low, high});
+    
+    while (low <= high) {
+        yield snap(14, `Checking condition low <= high (${low} <= ${high}). Entering loop.`, "info", {low, high});
+        
+        let partX = low + Math.floor((high - low) / 2);
+        let partY = Math.floor((x + y + 1) / 2) - partX;
+        
+        yield snap(15, `Calculated partitionX (cut in nums1) = ${partX}. Remaining for left half -> partitionY (cut in nums2) = ${partY}.`, "update", {low, high, partX, partY});
+        
+        let maxLx = (partX === 0) ? -Infinity : nums1[partX - 1];
+        let minRx = (partX === x) ? Infinity : nums1[partX];
+        
+        let maxLy = (partY === 0) ? -Infinity : nums2[partY - 1];
+        let minRy = (partY === y) ? Infinity : nums2[partY];
+        
+        yield snap(21, `Found boundary values around the cuts.\nmaxLeftX = ${maxLx === -Infinity ? '-∞' : maxLx}, minRightX = ${minRx === Infinity ? '+∞' : minRx}\nmaxLeftY = ${maxLy === -Infinity ? '-∞' : maxLy}, minRightY = ${minRy === Infinity ? '+∞' : minRy}`, "info", {low, high, partX, partY, maxLx, minRx, maxLy, minRy});
+        
+        yield snap(24, `VALIDATION: Check if maxLeftX <= minRightY (${maxLx === -Infinity ? '-∞' : maxLx} <= ${minRy === Infinity ? '+∞' : minRy}) AND maxLeftY <= minRightX (${maxLy === -Infinity ? '-∞' : maxLy} <= ${minRx === Infinity ? '+∞' : minRx})`, "info", {low, high, partX, partY, maxLx, minRx, maxLy, minRy});
+        
+        if (maxLx <= minRy && maxLy <= minRx) {
+            yield snap(25, `Valid partition found! Left side elements are all <= Right side elements.`, "success", {low, high, partX, partY, maxLx, minRx, maxLy, minRy, cutStatus: "success"});
+            
+            let median;
+            if ((x + y) % 2 === 1) {
+                median = Math.max(maxLx, maxLy);
+                yield snap(26, `Total length is odd (${x+y}). Median is max(maxLeftX, maxLeftY) = ${median}.`, "success", {low, high, partX, partY, maxLx, minRx, maxLy, minRy, median, cutStatus: "success"});
+            } else {
+                median = (Math.max(maxLx, maxLy) + Math.min(minRx, minRy)) / 2.0;
+                yield snap(30, `Total length is even (${x+y}). Median is avg(max(maxLeftX, maxLeftY), min(minRightX, minRightY)) = ${median}.`, "success", {low, high, partX, partY, maxLx, minRx, maxLy, minRy, median, cutStatus: "success"});
+            }
+            return;
+        } 
+        else if (maxLx > minRy) {
+            yield snap(34, `ADJUSTMENT: maxLeftX > minRightY (${maxLx} > ${minRy}). We took too many elements from nums1. Moving high left.`, "danger", {low, high, partX, partY, maxLx, minRx, maxLy, minRy, cutStatus: "danger-x"});
+            high = partX - 1;
+            yield snap(35, `high = partitionX - 1 = ${high}.`, "update", {low, high, partX, partY, maxLx, minRx, maxLy, minRy, cutStatus: "danger-x"});
+        } 
+        else {
+            yield snap(38, `ADJUSTMENT: maxLeftY > minRightX (${maxLy} > ${minRx === Infinity ? '+∞' : minRx}). We took too few elements from nums1. Moving low right.`, "danger", {low, high, partX, partY, maxLx, minRx, maxLy, minRy, cutStatus: "danger-y"});
+            low = partX + 1;
+            yield snap(39, `low = partitionX + 1 = ${low}.`, "update", {low, high, partX, partY, maxLx, minRx, maxLy, minRy, cutStatus: "danger-y"});
+        }
+    }
+    
+    yield snap(43, `Loop finished without finding median. Input arrays are not sorted or invalid.`, "danger", {low, high});
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateBinarySearch();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+const infFormatter = (val) => {
+    if (val === null) return "-";
+    if (val === Infinity) return "+∞";
+    if (val === -Infinity) return "-∞";
+    return val;
+};
+
+function applyEventData(e) {
+    if (e.median !== null) {
+        document.getElementById("phaseIndicator").innerText = `Median Found: ${e.median}`;
+    } else if (e.partX !== null) {
+        document.getElementById("phaseIndicator").innerText = `Evaluating Partitions: X=${e.partX}, Y=${e.partY}`;
+    } else {
+        document.getElementById("phaseIndicator").innerText = `Setting Initial Bounds`;
+    }
+    
+    document.getElementById("val-low").innerText = e.low !== null ? e.low : "-";
+    document.getElementById("val-high").innerText = e.high !== null ? e.high : "-";
+    document.getElementById("val-px").innerText = e.partX !== null ? e.partX : "-";
+    document.getElementById("val-py").innerText = e.partY !== null ? e.partY : "-";
+    document.getElementById("val-median").innerText = e.median !== null ? e.median : "-";
+
+    document.getElementById("val-mlx").innerText = infFormatter(e.maxLx);
+    document.getElementById("val-mrx").innerText = infFormatter(e.minRx);
+    document.getElementById("val-mly").innerText = infFormatter(e.maxLy);
+    document.getElementById("val-mry").innerText = infFormatter(e.minRy);
+
+    if (e.isSwapped) document.getElementById("swapIndicator").style.display = "inline";
+    else document.getElementById("swapIndicator").style.display = "none";
+
+    // Arrays Visualization Strategy
+    // We add an empty partition line element at index 'i'.
+    // Elements from 0 to part-1 are left side.
+    const renderArray = (arr, partIndex, isX) => {
+        let html = "";
+        let len = arr.length;
+        
+        for (let i = 0; i <= len; i++) {
+            // Draw Partition Line
+            if (partIndex !== null && partIndex === i) {
+                let cutClass = "partition-line";
+                if (e.cutStatus === "success") cutClass += " partition-success";
+                if (isX && e.cutStatus === "danger-x") cutClass += " partition-danger";
+                if (!isX && e.cutStatus === "danger-y") cutClass += " partition-danger";
+                html += `<div class="${cutClass}"></div>`;
+            }
+
+            // Draw Element
+            if (i < len) {
+                let cls = "";
+                let ptrLbl = "";
+
+                if (partIndex !== null) {
+                    if (i < partIndex) cls = "cell-left-side";
+                    else cls = "cell-right-side";
+                }
+
+                // Highlight bounds
+                if (isX) {
+                    if (e.maxLx !== null && i === partIndex - 1) cls += " cell-max-left";
+                    if (e.minRx !== null && i === partIndex) cls += " cell-min-right";
+                } else {
+                    if (e.maxLy !== null && i === partIndex - 1) cls += " cell-max-left";
+                    if (e.minRy !== null && i === partIndex) cls += " cell-min-right";
+                }
+
+                html += `<div class="array-item"><span class="array-idx">idx ${i}</span><div class="array-cell ${cls}">${arr[i]}</div></div>`;
+            }
+        }
+        
+        if (len === 0) {
+            // Handle completely empty arrays visually
+            if (partIndex === 0) {
+                 let cutClass = "partition-line";
+                 if (e.cutStatus === "success") cutClass += " partition-success";
+                 html += `<div class="${cutClass}"></div>`;
+            }
+            html += `<div style="color:#777; font-style:italic; margin-left: 10px; margin-top: 15px;">Empty Array</div>`;
+        }
+
+        return html;
+    };
+
+    document.getElementById("nums1Array").innerHTML = renderArray(e.nums1, e.partX, true);
+    document.getElementById("nums2Array").innerHTML = renderArray(e.nums2, e.partY, false);
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1500); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>
