@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 1334 - Floyd-Warshall Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -146,98 +147,90 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. LC Example 1 (n=4)</option>
-            <option value="tc2">2. LC Example 2 (n=5)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>n:</label><input id="nInput" style="width: 30px;" value="4">
-        <label>Threshold:</label><input id="threshInput" style="width: 30px;" value="4">
-    </div>
-
-    <div class="header-group">
-        <label>Edges (u,v,w):</label><textarea id="edgesInput" rows="1" cols="25">0,1,3&#10;1,2,1&#10;1,3,4&#10;2,3,1</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run Floyd-Warshall</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. LC Example 1 (n=4)</option>
+<option value="tc2">2. LC Example 2 (n=5)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>n:</label><input id="nInput" style="width: 30px;" value="4"/>
+<label>Threshold:</label><input id="threshInput" style="width: 30px;" value="4"/>
+</div>
+<div class="header-group">
+<label>Edges (u,v,w):</label><textarea cols="25" id="edgesInput" rows="1">0,1,3
+1,2,1
+1,3,4
+2,3,1</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run Floyd-Warshall</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (FLOYD-WARSHALL)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(N&sup3;)</strong><br>
-                The core logic relies on three nested loops iterating from <code>0</code> to <code>N</code>. Therefore, the time complexity strictly scales cubically with the number of cities. Finding the best city at the end takes an additional O(N&sup2;).<br><br>
-                <strong>Space Complexity: O(N&sup2;)</strong><br>
-                We use an N&times;N distance matrix to store the shortest paths between all pairs of nodes.
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (FLOYD-WARSHALL)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(N³)</strong><br/>
+                The core logic relies on three nested loops iterating from <code>0</code> to <code>N</code>. Therefore, the time complexity strictly scales cubically with the number of cities. Finding the best city at the end takes an additional O(N²).<br/><br/>
+<strong>Space Complexity: O(N²)</strong><br/>
+                We use an N×N distance matrix to store the shortest paths between all pairs of nodes.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel" style="display: flex; gap: 15px;">
-            <div style="flex: 1;">
-                <h3>Current Loop State</h3>
-                <div class="var-container">
-                    <div class="var-box">k (Intermediate)<div class="var-value var-k" id="val-k">-</div></div>
-                    <div class="var-box">i (Source)<div class="var-value var-i" id="val-i">-</div></div>
-                    <div class="var-box">j (Destination)<div class="var-value var-j" id="val-j">-</div></div>
-                </div>
-                <h3>Distance Matrix</h3>
-                <div class="matrix-wrapper"><div id="distMatrix" class="matrix-grid"></div></div>
-            </div>
-            
-            <div style="flex: 1.2; display:flex; flex-direction:column;">
-                <h3>City Graph</h3>
-                <svg id="graph" style="flex: 1; min-height: 200px;">
-                    <defs>
-                        <filter id="glow-k" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="3" result="blur" />
-                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                        </filter>
-                        <filter id="glow-i" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="3" result="blur" />
-                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                        </filter>
-                        <filter id="glow-j" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="3" result="blur" />
-                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                        </filter>
-                        <filter id="glow-accent" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="4" result="blur" />
-                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                        </filter>
-                    </defs>
-                </svg>
-            </div>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel" style="display: flex; gap: 15px;">
+<div style="flex: 1;">
+<h3>Current Loop State</h3>
+<div class="var-container">
+<div class="var-box">k (Intermediate)<div class="var-value var-k" id="val-k">-</div></div>
+<div class="var-box">i (Source)<div class="var-value var-i" id="val-i">-</div></div>
+<div class="var-box">j (Destination)<div class="var-value var-j" id="val-j">-</div></div>
+</div>
+<h3>Distance Matrix</h3>
+<div class="matrix-wrapper"><div class="matrix-grid" id="distMatrix"></div></div>
+</div>
+<div style="flex: 1.2; display:flex; flex-direction:column;">
+<h3>City Graph</h3>
+<svg id="graph" style="flex: 1; min-height: 200px;">
+<defs>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-k" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-i" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-j" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-accent" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="4"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+</defs>
+</svg>
+</div>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -607,5 +600,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

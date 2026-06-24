@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>Kosaraju's Algorithm (SCC) Visualizer</title>
 <!-- Highlight.js for syntax highlighting -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -196,86 +197,77 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. User Provided (from main)</option>
-            <option value="tc2">2. Single Large Cycle</option>
-            <option value="tc3">3. Complex (4 SCCs)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>V:</label><input id="vInput" style="width: 30px;" value="5">
-    </div>
-
-    <div class="header-group">
-        <label>Edges (u,v):</label><textarea id="edgesInput" rows="1" cols="25">1,0&#10;0,2&#10;2,1&#10;0,3&#10;3,4</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run Kosaraju</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. User Provided (from main)</option>
+<option value="tc2">2. Single Large Cycle</option>
+<option value="tc3">3. Complex (4 SCCs)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>V:</label><input id="vInput" style="width: 30px;" value="5"/>
+</div>
+<div class="header-group">
+<label>Edges (u,v):</label><textarea cols="25" id="edgesInput" rows="1">1,0
+0,2
+2,1
+0,3
+3,4</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run Kosaraju</button>
+</div>
 <div class="main">
-    <div class="left-panel">
-        <div class="panel" style="display:flex; flex-direction:column; flex:1;">
-            <h3>Java Code (Expandable Panel)</h3>
-            <div id="code" class="code-container"></div>
-        </div>
-
-        <div class="panel">
-            <h3>Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(V + E)</strong><br>
-                The algorithm requires two full Depth-First Searches. Reversing the graph takes O(V + E). DFS processes every vertex and edge exactly once, yielding linear time complexity.<br><br>
-                <strong>Space Complexity: O(V + E)</strong><br>
+<div class="left-panel">
+<div class="panel" style="display:flex; flex-direction:column; flex:1;">
+<h3>Java Code (Expandable Panel)</h3>
+<div class="code-container" id="code"></div>
+</div>
+<div class="panel">
+<h3>Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(V + E)</strong><br/>
+                The algorithm requires two full Depth-First Searches. Reversing the graph takes O(V + E). DFS processes every vertex and edge exactly once, yielding linear time complexity.<br/><br/>
+<strong>Space Complexity: O(V + E)</strong><br/>
                 Space is used for the standard adjacency list <code>adj</code>, the transposed adjacency list <code>adjT</code>, the <code>vis</code> array, and the <code>st</code> Stack.
             </div>
-        </div>
-    </div>
-
-    <div class="divider" id="divider"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #252526; margin-bottom: 0;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Current Phase <div class="var-value" id="val-phase" style="color:white;">-</div></div>
-                <div class="var-box">SCC Count <div class="var-value" id="val-scc" style="color:var(--accent);">0</div></div>
-            </div>
-
-            <div class="split-panel">
-                <div style="flex: 1.5;">
-                    <h3>Stack (st) <span style="font-size:10px; color:#888;">[Top on right]</span></h3>
-                    <div id="stackArray" class="stack-container"></div>
-                </div>
-                <div style="flex: 1;">
-                    <h3>vis[] Array</h3>
-                    <div id="visArray" class="array-container"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <h3>Directed Graph (Arrows flip in Phase 2)</h3>
-            <svg id="graph" height="230"></svg>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="divider" id="divider"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #252526; margin-bottom: 0;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Current Phase <div class="var-value" id="val-phase" style="color:white;">-</div></div>
+<div class="var-box">SCC Count <div class="var-value" id="val-scc" style="color:var(--accent);">0</div></div>
+</div>
+<div class="split-panel">
+<div style="flex: 1.5;">
+<h3>Stack (st) <span style="font-size:10px; color:#888;">[Top on right]</span></h3>
+<div class="stack-container" id="stackArray"></div>
+</div>
+<div style="flex: 1;">
+<h3>vis[] Array</h3>
+<div class="array-container" id="visArray"></div>
+</div>
+</div>
+</div>
+<div class="panel">
+<h3>Directed Graph (Arrows flip in Phase 2)</h3>
+<svg height="230" id="graph"></svg>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 const JAVA_CODE = [
     "class Solution {",
@@ -661,5 +653,13 @@ window.onload = function() {
     setupDivider();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

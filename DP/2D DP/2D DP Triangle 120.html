@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 120 - Triangle (2D DP) Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -145,77 +146,70 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
-            <option value="tc1">1. LC Example 1 (n=4)</option>
-            <option value="tc2">2. Single Element (n=1)</option>
-            <option value="tc3">3. All Negatives (n=3)</option>
-            <option value="tc4">4. Larger Triangle (n=5)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>Triangle (Rows by \n, Vals by ,):</label>
-        <textarea id="triangleInput" rows="2" cols="20">2&#10;3,4&#10;6,5,7&#10;4,1,8,3</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
+<option value="tc1">1. LC Example 1 (n=4)</option>
+<option value="tc2">2. Single Element (n=1)</option>
+<option value="tc3">3. All Negatives (n=3)</option>
+<option value="tc4">4. Larger Triangle (n=5)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Triangle (Rows by \n, Vals by ,):</label>
+<textarea cols="20" id="triangleInput" rows="2">2
+3,4
+6,5,7
+4,1,8,3</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run DP</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">PYTHON CODE (BOTTOM-UP 2D DP)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(N²)</strong><br>
-                Where N is the number of rows in the triangle. The algorithm visits every element in the triangle exactly once, starting from the second-to-last row up to the top. There are N*(N+1)/2 elements, making the time complexity proportional to N².<br><br>
-                <strong>Space Complexity: O(N²)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">PYTHON CODE (BOTTOM-UP 2D DP)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(N²)</strong><br/>
+                Where N is the number of rows in the triangle. The algorithm visits every element in the triangle exactly once, starting from the second-to-last row up to the top. There are N*(N+1)/2 elements, making the time complexity proportional to N².<br/><br/>
+<strong>Space Complexity: O(N²)</strong><br/>
                 The provided solution explicitly builds a full 2D `dp` array of the same shape as the input triangle, requiring O(N²) space. <i>(Note: This can be optimized to O(N) by maintaining only a single 1D array representing the row directly below).</i>
-            </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Row i <div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
-                <div class="var-box">Col j <div class="var-value" id="val-j" style="color:var(--active);">-</div></div>
-                <div class="var-box">Cell Value <div class="var-value" id="val-cell" style="color:white;">-</div></div>
-                <div class="var-box">Left Child<div class="var-value" id="val-left" style="color:var(--neighbor);">-</div></div>
-                <div class="var-box">Right Child<div class="var-value" id="val-right" style="color:var(--neighbor);">-</div></div>
-                <div class="var-box">dp[i][j] <div class="var-value" id="val-total" style="color:var(--accent);">-</div></div>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">dp[][] Triangle State</h3>
-            </div>
-            <div id="triangle-visual" class="triangle-wrapper" style="flex: 1;"></div>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Row i <div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+<div class="var-box">Col j <div class="var-value" id="val-j" style="color:var(--active);">-</div></div>
+<div class="var-box">Cell Value <div class="var-value" id="val-cell" style="color:white;">-</div></div>
+<div class="var-box">Left Child<div class="var-value" id="val-left" style="color:var(--neighbor);">-</div></div>
+<div class="var-box">Right Child<div class="var-value" id="val-right" style="color:var(--neighbor);">-</div></div>
+<div class="var-box">dp[i][j] <div class="var-value" id="val-total" style="color:var(--accent);">-</div></div>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">dp[][] Triangle State</h3>
+</div>
+<div class="triangle-wrapper" id="triangle-visual" style="flex: 1;"></div>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -484,5 +478,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

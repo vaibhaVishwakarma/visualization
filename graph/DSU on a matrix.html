@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 827 - Making A Large Island (DSU)</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -146,69 +147,60 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. LC Example (Max 3)</option>
-            <option value="tc2">2. Merge Two Islands (Max 4)</option>
-            <option value="tc3">3. All Water (Max 1)</option>
-            <option value="tc4">4. All Land (Max 4)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>Grid (n x n):</label><textarea id="gridInput" rows="1" cols="15">1,0&#10;0,1</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run DSU</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. LC Example (Max 3)</option>
+<option value="tc2">2. Merge Two Islands (Max 4)</option>
+<option value="tc3">3. All Water (Max 1)</option>
+<option value="tc4">4. All Land (Max 4)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Grid (n x n):</label><textarea cols="15" id="gridInput" rows="1">1,0
+0,1</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run DSU</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (DSU COMPONENT TRACKING)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(N&sup2;)</strong><br>
-                Where N is the grid dimension. Phase 1 iterates over the grid doing DSU operations (nearly O(1) with path compression and size tracking). Phase 2 iterates over the grid again, checking 4 neighbors for each 0. Overall it scales linearly with the number of cells.<br><br>
-                <strong>Space Complexity: O(N&sup2;)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (DSU COMPONENT TRACKING)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(N²)</strong><br/>
+                Where N is the grid dimension. Phase 1 iterates over the grid doing DSU operations (nearly O(1) with path compression and size tracking). Phase 2 iterates over the grid again, checking 4 neighbors for each 0. Overall it scales linearly with the number of cells.<br/><br/>
+<strong>Space Complexity: O(N²)</strong><br/>
                 The `parent` and `size` tracking structures (or the Point arrays in the Java code) require memory proportional to the total number of cells in the matrix.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Current Phase <div class="var-phase" id="val-phase">Initializing</div></div>
-                <div class="var-box">Global Max Size <div class="var-value" id="val-max">0</div></div>
-            </div>
-
-            <div class="grid-wrapper">
-                <div id="gridVisual" class="grid-container"></div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Current Phase <div class="var-phase" id="val-phase">Initializing</div></div>
+<div class="var-box">Global Max Size <div class="var-value" id="val-max">0</div></div>
+</div>
+<div class="grid-wrapper">
+<div class="grid-container" id="gridVisual"></div>
+</div>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -576,5 +568,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

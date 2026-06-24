@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 44 - Wildcard Matching Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
 <style>
@@ -132,72 +133,65 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Presets:</label>
-        <select id="testCases" onchange="loadPreset()">
-            <option value="tc1">1. Wildcard Multi Match ("aa", "*") -> True</option>
-            <option value="tc2">2. Single Char Mismatch ("cb", "?a") -> False</option>
-            <option value="tc3">3. Empty vs Star Match ("", "***") -> True</option>
-            <option value="tc4">4. Complex Interleaved ("adceb", "*a*b") -> True</option>
-        </select>
-    </div>
-    <div class="header-group">
-        <label>String s:</label>
-        <input id="sInput" type="text" style="width: 110px;" value="aa">
-    </div>
-    <div class="header-group">
-        <label>Pattern p:</label>
-        <input id="pInput" type="text" style="width: 110px;" value="*">
-    </div>
-    <button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+<div class="header-group">
+<label>Presets:</label>
+<select id="testCases" onchange="loadPreset()">
+<option value="tc1">1. Wildcard Multi Match ("aa", "*") -&gt; True</option>
+<option value="tc2">2. Single Char Mismatch ("cb", "?a") -&gt; False</option>
+<option value="tc3">3. Empty vs Star Match ("", "***") -&gt; True</option>
+<option value="tc4">4. Complex Interleaved ("adceb", "*a*b") -&gt; True</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>String s:</label>
+<input id="sInput" style="width: 110px;" type="text" value="aa"/>
+</div>
+<div class="header-group">
+<label>Pattern p:</label>
+<input id="pInput" style="width: 110px;" type="text" value="*"/>
+</div>
+<button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">C++ Reverse DP Trace</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3>Reverse Mapping Formula</h3>
-            <div class="footer-note">
-                • <strong>If s[i] == p[j] || p[j] == '?'</strong>:<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;<code>dp[i][j] = dp[i+1][j+1]</code> (Look down-right)<br>
-                • <strong>Else if p[j] == '*'</strong>:<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;<code>dp[i][j] = dp[i+1][j] || dp[i][j+1]</code> (Look down OR right)
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">C++ Reverse DP Trace</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3>Reverse Mapping Formula</h3>
+<div class="footer-note">
+                • <strong>If s[i] == p[j] || p[j] == '?'</strong>:<br/>
+                    <code>dp[i][j] = dp[i+1][j+1]</code> (Look down-right)<br/>
+                • <strong>Else if p[j] == '*'</strong>:<br/>
+                    <code>dp[i][j] = dp[i+1][j] || dp[i][j+1]</code> (Look down OR right)
             </div>
-        </div>
-    </div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Pointers (i, j)<div class="var-value" id="val-ptrs">-</div></div>
-                <div class="var-box">Inspecting Characters<div class="var-value" id="val-chars">-</div></div>
-                <div class="var-box">Result state dp[i][j]<div class="var-value" id="val-res">-</div></div>
-            </div>
-
-            <h3>Reverse Bottom-Up Table (s on Rows vs p on Columns)</h3>
-            <div class="table-scroll">
-                <table id="dpMatrixTable" class="dp-table"></table>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Step Analysis Logger</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Pointers (i, j)<div class="var-value" id="val-ptrs">-</div></div>
+<div class="var-box">Inspecting Characters<div class="var-value" id="val-chars">-</div></div>
+<div class="var-box">Result state dp[i][j]<div class="var-value" id="val-res">-</div></div>
+</div>
+<h3>Reverse Bottom-Up Table (s on Rows vs p on Columns)</h3>
+<div class="table-scroll">
+<table class="dp-table" id="dpMatrixTable"></table>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Step Analysis Logger</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 const CPP_CODE = [
     "bool isMatch(string s, string p) {",
@@ -446,5 +440,13 @@ window.onload = () => {
     generateSimulation();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

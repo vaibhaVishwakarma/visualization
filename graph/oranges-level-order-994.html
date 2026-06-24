@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 994 - Rotting Oranges Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -164,66 +165,58 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>LeetCode Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. Normal Rotting (Ans: 4)</option>
-            <option value="tc2">2. Unreachable Fresh (Ans: -1)</option>
-            <option value="tc3">3. Already Empty (Ans: 0)</option>
-            <option value="tc4">4. Multiple Initial Rotten</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>Grid Input:</label>
-        <textarea id="gridInput" rows="1" cols="20">2,1,1&#10;1,1,0&#10;0,1,1</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run BFS</button>
+<div class="header-group">
+<label>LeetCode Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. Normal Rotting (Ans: 4)</option>
+<option value="tc2">2. Unreachable Fresh (Ans: -1)</option>
+<option value="tc3">3. Already Empty (Ans: 0)</option>
+<option value="tc4">4. Multiple Initial Rotten</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Grid Input:</label>
+<textarea cols="20" id="gridInput" rows="1">2,1,1
+1,1,0
+0,1,1</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run BFS</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (BFS)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <div class="var-container" style="margin-bottom: 0;">
-                <div class="var-box">Minutes <div class="var-value" id="val-minutes">0</div></div>
-                <div class="var-box">Fresh Oranges <div class="var-value" id="val-fresh" style="color:var(--fresh);">0</div></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <h3>Queue (Rotten Oranges Processed)</h3>
-            <div id="queue" class="queue-container"></div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>2D Grid Visualization</h3>
-            <div id="grid-visual"></div>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (BFS)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<div class="var-container" style="margin-bottom: 0;">
+<div class="var-box">Minutes <div class="var-value" id="val-minutes">0</div></div>
+<div class="var-box">Fresh Oranges <div class="var-value" id="val-fresh" style="color:var(--fresh);">0</div></div>
 </div>
-
+</div>
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<h3>Queue (Rotten Oranges Processed)</h3>
+<div class="queue-container" id="queue"></div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>2D Grid Visualization</h3>
+<div id="grid-visual"></div>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -557,5 +550,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 583 - Delete Operation for Two Strings</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
 <style>
@@ -130,75 +131,68 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Presets:</label>
-        <select id="testCases" onchange="loadPreset()">
-            <option value="tc1">1. Standard ("sea", "eat") -> Deletions: 2</option>
-            <option value="tc2">2. Full Match ("leetcode", "etco") -> Deletions: 4</option>
-            <option value="tc3">3. No Match ("abc", "def") -> Deletions: 6</option>
-            <option value="tc4">4. One Empty Result ("a", "") -> Deletions: 1</option>
-        </select>
-    </div>
-    <div class="header-group">
-        <label>Word 1 (Rows):</label>
-        <input id="word1Input" type="text" style="width: 110px;" value="sea">
-    </div>
-    <div class="header-group">
-        <label>Word 2 (Cols):</label>
-        <input id="word2Input" type="text" style="width: 110px;" value="eat">
-    </div>
-    <button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+<div class="header-group">
+<label>Presets:</label>
+<select id="testCases" onchange="loadPreset()">
+<option value="tc1">1. Standard ("sea", "eat") -&gt; Deletions: 2</option>
+<option value="tc2">2. Full Match ("leetcode", "etco") -&gt; Deletions: 4</option>
+<option value="tc3">3. No Match ("abc", "def") -&gt; Deletions: 6</option>
+<option value="tc4">4. One Empty Result ("a", "") -&gt; Deletions: 1</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Word 1 (Rows):</label>
+<input id="word1Input" style="width: 110px;" type="text" value="sea"/>
+</div>
+<div class="header-group">
+<label>Word 2 (Cols):</label>
+<input id="word2Input" style="width: 110px;" type="text" value="eat"/>
+</div>
+<button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">Python Code Trace</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3>Subproblem Logic & Formula</h3>
-            <div class="footer-note">
-                If <code style="color:var(--accent)">word1[i-1] == word2[j-1]</code>:<br>
-                &nbsp;&nbsp;<strong>dp[i][j] = dp[i-1][j-1] + 1</strong><br>
-                Else:<br>
-                &nbsp;&nbsp;<strong>dp[i][j] = max(dp[i-1][j], dp[i][j-1])</strong><br>
-                <hr style="border-color:#333; margin: 8px 0;">
-                <strong>Final Return Formula:</strong><br>
-                <code style="color:#ffd54f">deletions = (n + m) - (LCS * 2)</code>
-            </div>
-        </div>
-    </div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Row Char word1[i-1]<div class="var-value" id="val-i">-</div></div>
-                <div class="var-box">Col Char word2[j-1]<div class="var-value" id="val-j">-</div></div>
-                <div class="var-box">LCS Length dp[i][j]<div class="var-value" id="val-lcs" style="color:var(--accent);">-</div></div>
-            </div>
-
-            <h3>Dynamic Programming Matrix (word1 vs word2)</h3>
-            <div class="table-scroll">
-                <table id="dpMatrixTable" class="dp-table"></table>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Step Analysis Logger</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">Python Code Trace</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3>Subproblem Logic &amp; Formula</h3>
+<div class="footer-note">
+                If <code style="color:var(--accent)">word1[i-1] == word2[j-1]</code>:<br/>
+                  <strong>dp[i][j] = dp[i-1][j-1] + 1</strong><br/>
+                Else:<br/>
+                  <strong>dp[i][j] = max(dp[i-1][j], dp[i][j-1])</strong><br/>
+<hr style="border-color:#333; margin: 8px 0;"/>
+<strong>Final Return Formula:</strong><br/>
+<code style="color:#ffd54f">deletions = (n + m) - (LCS * 2)</code>
 </div>
-
+</div>
+</div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Row Char word1[i-1]<div class="var-value" id="val-i">-</div></div>
+<div class="var-box">Col Char word2[j-1]<div class="var-value" id="val-j">-</div></div>
+<div class="var-box">LCS Length dp[i][j]<div class="var-value" id="val-lcs" style="color:var(--accent);">-</div></div>
+</div>
+<h3>Dynamic Programming Matrix (word1 vs word2)</h3>
+<div class="table-scroll">
+<table class="dp-table" id="dpMatrixTable"></table>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Step Analysis Logger</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 const PYTHON_CODE = [
     "class Solution:",
@@ -413,5 +407,13 @@ window.onload = () => {
     generateSimulation();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

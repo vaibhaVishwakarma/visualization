@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 312 - Burst Balloons (Java Structure) Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
 <style>
@@ -130,67 +131,60 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Presets:</label>
-        <select id="testCases" onchange="loadPreset()">
-            <option value="tc1">1. Normal Combo [3, 1, 5, 8] -> Ans: 167</option>
-            <option value="tc2">2. Minimal [1, 5] -> Ans: 10</option>
-            <option value="tc3">3. Flat Same [2, 2, 2] -> Ans: 20</option>
-        </select>
-    </div>
-    <div class="header-group">
-        <label>Balloons (nums):</label>
-        <input id="arrayInput" type="text" style="width: 150px;" value="3, 1, 5, 8">
-    </div>
-    <button class="primary" onclick="generateSimulation()">Initialize DP Matrix</button>
+<div class="header-group">
+<label>Presets:</label>
+<select id="testCases" onchange="loadPreset()">
+<option value="tc1">1. Normal Combo [3, 1, 5, 8] -&gt; Ans: 167</option>
+<option value="tc2">2. Minimal [1, 5] -&gt; Ans: 10</option>
+<option value="tc3">3. Flat Same [2, 2, 2] -&gt; Ans: 20</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Balloons (nums):</label>
+<input id="arrayInput" style="width: 150px;" type="text" value="3, 1, 5, 8"/>
+</div>
+<button class="primary" onclick="generateSimulation()">Initialize DP Matrix</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">Java Bottom-Up Interval DP</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3>Interval Boundary Mechanics</h3>
-            <div class="footer-note">
-                • <strong>`a[i-1] * a[k] * a[j+1]`</strong>:<br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">Java Bottom-Up Interval DP</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3>Interval Boundary Mechanics</h3>
+<div class="footer-note">
+                • <strong>`a[i-1] * a[k] * a[j+1]`</strong>:<br/>
                 Because balloon `k` is chosen as the <strong>last</strong> balloon to pop inside range `[i, j]`, everything else within that scope has vanished. Its real-time neighbors are the outside boundary guards `i-1` and `j+1`.
             </div>
-        </div>
-    </div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Length (len)<div class="var-value" id="val-len">-</div></div>
-                <div class="var-box">Interval (i, j)<div class="var-value" id="val-ij">-</div></div>
-                <div class="var-box">Last Burst (k)<div class="var-value" id="val-k">-</div></div>
-                <div class="var-box">Calculation Formula<div class="var-value" id="val-formula" style="font-size:12px; color:#aaa; font-family: monospace;">-</div></div>
-                <div class="var-box">Current Max<div class="var-value" id="val-max" style="color:var(--accent);">-</div></div>
-            </div>
-
-            <h3>Dynamic Programming 2D Table Matrix: dp[i][j]</h3>
-            <div class="table-scroll">
-                <table id="dpMatrixTable" class="dp-table"></table>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Step Analysis Logger</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Length (len)<div class="var-value" id="val-len">-</div></div>
+<div class="var-box">Interval (i, j)<div class="var-value" id="val-ij">-</div></div>
+<div class="var-box">Last Burst (k)<div class="var-value" id="val-k">-</div></div>
+<div class="var-box">Calculation Formula<div class="var-value" id="val-formula" style="font-size:12px; color:#aaa; font-family: monospace;">-</div></div>
+<div class="var-box">Current Max<div class="var-value" id="val-max" style="color:var(--accent);">-</div></div>
+</div>
+<h3>Dynamic Programming 2D Table Matrix: dp[i][j]</h3>
+<div class="table-scroll">
+<table class="dp-table" id="dpMatrixTable"></table>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Step Analysis Logger</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 const JAVA_CODE = [
     "public int maxCoins(int[] nums) {",
@@ -432,5 +426,13 @@ window.onload = () => {
     generateSimulation();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 875 - Koko Eating Bananas Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -151,83 +152,71 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. LC Example 1 (h=8)</option>
-            <option value="tc2">2. LC Example 2 (h=5)</option>
-            <option value="tc3">3. LC Example 3 (h=6)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>Piles[]:</label>
-        <input id="pilesInput" type="text" style="width: 150px;" value="3,6,7,11">
-    </div>
-
-    <div class="header-group">
-        <label>Hours (h):</label>
-        <input id="hInput" type="number" style="width: 50px;" value="8">
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run Binary Search</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. LC Example 1 (h=8)</option>
+<option value="tc2">2. LC Example 2 (h=5)</option>
+<option value="tc3">3. LC Example 3 (h=6)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Piles[]:</label>
+<input id="pilesInput" style="width: 150px;" type="text" value="3,6,7,11"/>
+</div>
+<div class="header-group">
+<label>Hours (h):</label>
+<input id="hInput" style="width: 50px;" type="number" value="8"/>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run Binary Search</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (BINARY SEARCH ON ANSWER)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Core Logic:</strong><br>
-                The minimum possible eating speed is 1. The maximum speed is the largest pile size (eating faster won't save any more hours per pile). We binary search within this range `[1, max_pile]` to find the minimum speed that satisfies the condition.<br><br>
-                <strong>Time Complexity: O(N log M)</strong><br>
-                Where <code>N</code> is the number of piles and <code>M</code> is the maximum pile size. The binary search takes <code>O(log M)</code> steps. In each step, verifying if Koko can finish takes <code>O(N)</code> time.<br><br>
-                <strong>Space Complexity: O(1)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (BINARY SEARCH ON ANSWER)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Core Logic:</strong><br/>
+                The minimum possible eating speed is 1. The maximum speed is the largest pile size (eating faster won't save any more hours per pile). We binary search within this range `[1, max_pile]` to find the minimum speed that satisfies the condition.<br/><br/>
+<strong>Time Complexity: O(N log M)</strong><br/>
+                Where <code>N</code> is the number of piles and <code>M</code> is the maximum pile size. The binary search takes <code>O(log M)</code> steps. In each step, verifying if Koko can finish takes <code>O(N)</code> time.<br/><br/>
+<strong>Space Complexity: O(1)</strong><br/>
                 We only use primitive variables to keep track of speeds and hours.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div id="phaseIndicator" class="phase-indicator">Waiting to Start</div>
-
-            <div class="var-container">
-                <div class="var-box">Allowed Hours (h)<div class="var-value" id="val-h" style="color:white;">-</div></div>
-                <div class="var-box">minSpeed (left)<div class="var-value" id="val-min" style="color:var(--neighbor);">-</div></div>
-                <div class="var-box">currentSpeed (mid)<div class="var-value" id="val-curr" style="color:var(--active);">-</div></div>
-                <div class="var-box">maxSpeed (right)<div class="var-value" id="val-max" style="color:var(--purple);">-</div></div>
-                <div class="var-box">Hours Needed<div class="var-value" id="val-hrs" style="color:white;">-</div></div>
-                <div class="var-box" style="border-color: var(--accent);">Optimal Speed<div class="var-value" id="val-opt" style="color:var(--accent);">-</div></div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">Piles Array <span style="font-size: 10px; color: var(--accent); font-weight: normal;">(Shows hours to eat current pile)</span></h3>
-            </div>
-            <div id="pilesArray" class="array-container" style="margin-bottom: 10px;"></div>
-        </div>
-
-        <div class="panel" style="flex: 1;">
-            <h3>Execution Log</h3>
-            <div class="log" id="log" style="height: 100%;"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="phase-indicator" id="phaseIndicator">Waiting to Start</div>
+<div class="var-container">
+<div class="var-box">Allowed Hours (h)<div class="var-value" id="val-h" style="color:white;">-</div></div>
+<div class="var-box">minSpeed (left)<div class="var-value" id="val-min" style="color:var(--neighbor);">-</div></div>
+<div class="var-box">currentSpeed (mid)<div class="var-value" id="val-curr" style="color:var(--active);">-</div></div>
+<div class="var-box">maxSpeed (right)<div class="var-value" id="val-max" style="color:var(--purple);">-</div></div>
+<div class="var-box">Hours Needed<div class="var-value" id="val-hrs" style="color:white;">-</div></div>
+<div class="var-box" style="border-color: var(--accent);">Optimal Speed<div class="var-value" id="val-opt" style="color:var(--accent);">-</div></div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">Piles Array <span style="font-size: 10px; color: var(--accent); font-weight: normal;">(Shows hours to eat current pile)</span></h3>
+</div>
+<div class="array-container" id="pilesArray" style="margin-bottom: 10px;"></div>
+</div>
+<div class="panel" style="flex: 1;">
+<h3>Execution Log</h3>
+<div class="log" id="log" style="height: 100%;"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -536,5 +525,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

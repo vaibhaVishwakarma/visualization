@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 787 - Cheapest Flights Within K Stops</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -149,98 +150,90 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. LC Example 1 (k=1)</option>
-            <option value="tc2">2. LC Example 2 (k=0)</option>
-            <option value="tc3">3. Long Path vs Short Path</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>n:</label><input id="nInput" style="width: 30px;" value="4">
-        <label>Src:</label><input id="srcInput" style="width: 30px;" value="0">
-        <label>Dst:</label><input id="dstInput" style="width: 30px;" value="3">
-        <label>k (Stops):</label><input id="kInput" style="width: 30px;" value="1">
-    </div>
-
-    <div class="header-group">
-        <label>Flights:</label><textarea id="flightsInput" rows="1" cols="25">0,1,100&#10;1,2,100&#10;2,0,100&#10;1,3,600&#10;2,3,200</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run BFS</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. LC Example 1 (k=1)</option>
+<option value="tc2">2. LC Example 2 (k=0)</option>
+<option value="tc3">3. Long Path vs Short Path</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>n:</label><input id="nInput" style="width: 30px;" value="4"/>
+<label>Src:</label><input id="srcInput" style="width: 30px;" value="0"/>
+<label>Dst:</label><input id="dstInput" style="width: 30px;" value="3"/>
+<label>k (Stops):</label><input id="kInput" style="width: 30px;" value="1"/>
+</div>
+<div class="header-group">
+<label>Flights:</label><textarea cols="25" id="flightsInput" rows="1">0,1,100
+1,2,100
+2,0,100
+1,3,600
+2,3,200</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run BFS</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (LEVEL-RESTRICTED BFS)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O((V + E) &times; K)</strong><br>
-                The BFS explores layer by layer up to <code>K+1</code> times. In the worst case, every edge might be checked during each level. The copying of the cost array takes O(V) per level.<br><br>
-                <strong>Space Complexity: O(V + E)</strong><br>
-                The adjacency matrix requires O(V&sup2;) (or O(V+E) if an adjacency list is used). The <code>cost</code> and <code>nextCost</code> arrays take O(V) space. The Queue takes up to O(V) space.
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (LEVEL-RESTRICTED BFS)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O((V + E) × K)</strong><br/>
+                The BFS explores layer by layer up to <code>K+1</code> times. In the worst case, every edge might be checked during each level. The copying of the cost array takes O(V) per level.<br/><br/>
+<strong>Space Complexity: O(V + E)</strong><br/>
+                The adjacency matrix requires O(V²) (or O(V+E) if an adjacency list is used). The <code>cost</code> and <code>nextCost</code> arrays take O(V) space. The Queue takes up to O(V) space.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Stops <div class="var-value" id="val-stops">-1</div></div>
-                <div class="var-box">Target K <div class="var-value" id="val-k">1</div></div>
-                <div class="var-box" style="flex: 2;">Queue <div id="queue" class="queue-container"></div></div>
-            </div>
-
-            <h3>Cost Arrays (Buffer mechanism)</h3>
-            <div class="array-row">
-                <div class="array-label">cost[]</div>
-                <div id="costArray" class="array-container"></div>
-            </div>
-            <div class="array-row">
-                <div class="array-label">nextCost[]</div>
-                <div id="nextCostArray" class="array-container"></div>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Flight Network</h3>
-            <svg id="graph" style="flex: 1; min-height: 200px;">
-                <defs>
-                    <filter id="glow-updated" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                    <filter id="glow-active" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="4" result="blur" />
-                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                </defs>
-            </svg>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Stops <div class="var-value" id="val-stops">-1</div></div>
+<div class="var-box">Target K <div class="var-value" id="val-k">1</div></div>
+<div class="var-box" style="flex: 2;">Queue <div class="queue-container" id="queue"></div></div>
+</div>
+<h3>Cost Arrays (Buffer mechanism)</h3>
+<div class="array-row">
+<div class="array-label">cost[]</div>
+<div class="array-container" id="costArray"></div>
+</div>
+<div class="array-row">
+<div class="array-label">nextCost[]</div>
+<div class="array-container" id="nextCostArray"></div>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Flight Network</h3>
+<svg id="graph" style="flex: 1; min-height: 200px;">
+<defs>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-updated" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-active" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="4"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+</defs>
+</svg>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -591,5 +584,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

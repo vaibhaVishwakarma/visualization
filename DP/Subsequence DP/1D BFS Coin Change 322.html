@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 322 - Coin Change (BFS) Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -154,85 +155,73 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
-            <option value="tc1">1. LC Example 1 (Amount=11)</option>
-            <option value="tc2">2. Unreachable (Amount=3)</option>
-            <option value="tc3">3. Zero Amount (Amount=0)</option>
-            <option value="tc4">4. Multiple Coins (Amount=8)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>Coins:</label>
-        <input id="coinsInput" type="text" style="width: 120px;" value="1,2,5">
-        <label>Amount:</label>
-        <input id="amountInput" type="number" style="width: 50px;" value="11" min="0" max="25">
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run BFS</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
+<option value="tc1">1. LC Example 1 (Amount=11)</option>
+<option value="tc2">2. Unreachable (Amount=3)</option>
+<option value="tc3">3. Zero Amount (Amount=0)</option>
+<option value="tc4">4. Multiple Coins (Amount=8)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Coins:</label>
+<input id="coinsInput" style="width: 120px;" type="text" value="1,2,5"/>
+<label>Amount:</label>
+<input id="amountInput" max="25" min="0" style="width: 50px;" type="number" value="11"/>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run BFS</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (BFS APPROACH)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(S * N)</strong><br>
-                Where S is the amount and N is the number of coin denominations. In the worst case, the BFS explores every amount from 0 to S, and at each amount, it loops through all N coins.<br><br>
-                <strong>Space Complexity: O(S)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (BFS APPROACH)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(S * N)</strong><br/>
+                Where S is the amount and N is the number of coin denominations. In the worst case, the BFS explores every amount from 0 to S, and at each amount, it loops through all N coins.<br/><br/>
+<strong>Space Complexity: O(S)</strong><br/>
                 The `visited` array and the Queue take up space proportional to the target amount `S`.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Steps (Coins Used)<div class="var-value" id="val-steps" style="color:var(--accent);">-</div></div>
-                <div class="var-box">Current Value (val)<div class="var-value" id="val-val" style="color:var(--active);">-</div></div>
-                <div class="var-box">Next Value (next)<div class="var-value" id="val-next" style="color:var(--neighbor);">-</div></div>
-            </div>
-
-            <h3 style="margin-bottom: 5px;">Queue (q)</h3>
-            <div id="queue" class="queue-container"></div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column; position: relative;" id="visualization-panel">
-            <h3 style="margin-bottom: 5px;">Visited Array (Amounts 0 to target)</h3>
-            <div id="visitedArray" class="array-container" style="position: relative;"></div>
-            
-            <svg class="svg-layer" id="svg-layer">
-                <defs>
-                    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--neighbor)" />
-                    </marker>
-                </defs>
-            </svg>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Steps (Coins Used)<div class="var-value" id="val-steps" style="color:var(--accent);">-</div></div>
+<div class="var-box">Current Value (val)<div class="var-value" id="val-val" style="color:var(--active);">-</div></div>
+<div class="var-box">Next Value (next)<div class="var-value" id="val-next" style="color:var(--neighbor);">-</div></div>
+</div>
+<h3 style="margin-bottom: 5px;">Queue (q)</h3>
+<div class="queue-container" id="queue"></div>
+</div>
+<div class="panel" id="visualization-panel" style="flex: 1; display:flex; flex-direction:column; position: relative;">
+<h3 style="margin-bottom: 5px;">Visited Array (Amounts 0 to target)</h3>
+<div class="array-container" id="visitedArray" style="position: relative;"></div>
+<svg class="svg-layer" id="svg-layer">
+<defs>
+<marker id="arrow" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="8" refy="5" viewbox="0 0 10 10">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="var(--neighbor)"></path>
+</marker>
+</defs>
+</svg>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -575,5 +564,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

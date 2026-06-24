@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 1319 - Network Connected (DSU) Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -152,97 +153,87 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. LC Example 1 (n=4)</option>
-            <option value="tc2">2. LC Example 2 (n=6)</option>
-            <option value="tc3">3. Impossible (n=6, short)</option>
-            <option value="tc4">4. Disconnected Clusters</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>Nodes (n):</label><input id="nInput" style="width: 30px;" value="4">
-    </div>
-
-    <div class="header-group">
-        <label>Connections:</label><textarea id="edgesInput" rows="1" cols="25">0,1&#10;0,2&#10;1,2</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. LC Example 1 (n=4)</option>
+<option value="tc2">2. LC Example 2 (n=6)</option>
+<option value="tc3">3. Impossible (n=6, short)</option>
+<option value="tc4">4. Disconnected Clusters</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Nodes (n):</label><input id="nInput" style="width: 30px;" value="4"/>
+</div>
+<div class="header-group">
+<label>Connections:</label><textarea cols="25" id="edgesInput" rows="1">0,1
+0,2
+1,2</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (DSU COMPONENT TRACKING)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(E &alpha;(V))</strong><br>
-                Where E is the number of connections and V is the number of nodes (computers). Iterating over all edges and performing Union-Find with path compression and union by rank takes nearly O(1) per edge, resulting in linear time.<br><br>
-                <strong>Space Complexity: O(V)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (DSU COMPONENT TRACKING)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(E α(V))</strong><br/>
+                Where E is the number of connections and V is the number of nodes (computers). Iterating over all edges and performing Union-Find with path compression and union by rank takes nearly O(1) per edge, resulting in linear time.<br/><br/>
+<strong>Space Complexity: O(V)</strong><br/>
                 The Disjoint Set requires O(V) space for the `parent` and `rank` arrays.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Total Components <div class="var-value" id="val-comp">0</div></div>
-                <div class="var-box">Redundant Cables <div class="var-value val-danger" id="val-redundant">0</div></div>
-                <div class="var-box">Operations Needed <div class="var-value" id="val-ops">-</div></div>
-            </div>
-
-            <div class="split-panel">
-                <div style="flex: 1;">
-                    <h3>parent[]</h3>
-                    <div id="parentArray" class="dsu-container"></div>
-                </div>
-                <div style="flex: 1;">
-                    <h3>rank[]</h3>
-                    <div id="rankArray" class="dsu-container"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Network Graph</h3>
-            <svg id="graph" style="flex: 1; min-height: 200px;">
-                <defs>
-                    <filter id="glow-useful" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                    <filter id="glow-active" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="4" result="blur" />
-                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                </defs>
-            </svg>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Total Components <div class="var-value" id="val-comp">0</div></div>
+<div class="var-box">Redundant Cables <div class="var-value val-danger" id="val-redundant">0</div></div>
+<div class="var-box">Operations Needed <div class="var-value" id="val-ops">-</div></div>
+</div>
+<div class="split-panel">
+<div style="flex: 1;">
+<h3>parent[]</h3>
+<div class="dsu-container" id="parentArray"></div>
+</div>
+<div style="flex: 1;">
+<h3>rank[]</h3>
+<div class="dsu-container" id="rankArray"></div>
+</div>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Network Graph</h3>
+<svg id="graph" style="flex: 1; min-height: 200px;">
+<defs>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-useful" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-active" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="4"></fegaussianblur>
+<femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+</filter>
+</defs>
+</svg>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -651,5 +642,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

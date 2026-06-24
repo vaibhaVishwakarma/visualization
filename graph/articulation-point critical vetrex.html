@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>Articulation Points (Tarjan's Algorithm) Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -162,86 +163,79 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. Two Triangles (Bowtie, n=5)</option>
-            <option value="tc2">2. Linear Chain (n=4)</option>
-            <option value="tc3">3. Cycle (No APs, n=4)</option>
-            <option value="tc4">4. Disconnected Components</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>V:</label><input id="vInput" style="width: 30px;" value="5">
-    </div>
-
-    <div class="header-group">
-        <label>Edges:</label><textarea id="edgesInput" rows="1" cols="25">0,1&#10;1,2&#10;2,0&#10;2,3&#10;3,4&#10;4,2</textarea>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run Tarjan's AP</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. Two Triangles (Bowtie, n=5)</option>
+<option value="tc2">2. Linear Chain (n=4)</option>
+<option value="tc3">3. Cycle (No APs, n=4)</option>
+<option value="tc4">4. Disconnected Components</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>V:</label><input id="vInput" style="width: 30px;" value="5"/>
+</div>
+<div class="header-group">
+<label>Edges:</label><textarea cols="25" id="edgesInput" rows="1">0,1
+1,2
+2,0
+2,3
+3,4
+4,2</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run Tarjan's AP</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (ARTICULATION POINT)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(V + E)</strong><br>
-                The DFS visits every vertex and explores every edge exactly once. Checking the conditions takes O(1) time per node.<br><br>
-                <strong>Space Complexity: O(V)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (ARTICULATION POINT)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(V + E)</strong><br/>
+                The DFS visits every vertex and explores every edge exactly once. Checking the conditions takes O(1) time per node.<br/><br/>
+<strong>Space Complexity: O(V)</strong><br/>
                 The recursive call stack can go up to O(V) deep in the worst case (a linear graph). The `time`, `low`, and `visited` arrays each take O(V) space.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Timer <div class="var-value" id="val-timer" style="color:white;">0</div></div>
-                <div class="var-box">Current Child Count <div class="var-value" id="val-child" style="color:var(--neighbor);">0</div></div>
-                <div class="var-box">Articulation Points <div class="var-value" id="val-aps" style="color:var(--danger);">-</div></div>
-            </div>
-
-            <div class="split-panel">
-                <div style="flex: 1;">
-                    <h3>time[]</h3>
-                    <div id="timeArray" class="array-container"></div>
-                </div>
-                <div style="flex: 1;">
-                    <h3>low[]</h3>
-                    <div id="lowArray" class="array-container"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Graph (Red Outline = Articulation Point)</h3>
-            <svg id="graph" style="flex: 1; min-height: 200px;"></svg>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Timer <div class="var-value" id="val-timer" style="color:white;">0</div></div>
+<div class="var-box">Current Child Count <div class="var-value" id="val-child" style="color:var(--neighbor);">0</div></div>
+<div class="var-box">Articulation Points <div class="var-value" id="val-aps" style="color:var(--danger);">-</div></div>
+</div>
+<div class="split-panel">
+<div style="flex: 1;">
+<h3>time[]</h3>
+<div class="array-container" id="timeArray"></div>
+</div>
+<div style="flex: 1;">
+<h3>low[]</h3>
+<div class="array-container" id="lowArray"></div>
+</div>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Graph (Red Outline = Articulation Point)</h3>
+<svg id="graph" style="flex: 1; min-height: 200px;"></svg>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -623,5 +617,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

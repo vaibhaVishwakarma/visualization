@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>Prim's Algorithm - Minimum Spanning Tree Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -143,89 +144,87 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. Standard Graph (6 nodes)</option>
-            <option value="tc2">2. Dense Graph</option>
-            <option value="tc3">3. Linear Chain</option>
-        </select>
-    </div>
-    <div class="header-group">
-        <label>Nodes (n):</label><input id="nInput" style="width: 30px;" value="6">
-    </div>
-    <div class="header-group">
-        <label>Edges (u,v,w):</label><textarea id="edgesInput" rows="1" cols="25">0,1,4&#10;0,2,3&#10;1,2,1&#10;1,3,2&#10;2,3,4&#10;3,4,2&#10;4,5,6</textarea>
-    </div>
-    <button class="primary" onclick="prepareExecution()">Build & Run Prim's</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. Standard Graph (6 nodes)</option>
+<option value="tc2">2. Dense Graph</option>
+<option value="tc3">3. Linear Chain</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Nodes (n):</label><input id="nInput" style="width: 30px;" value="6"/>
+</div>
+<div class="header-group">
+<label>Edges (u,v,w):</label><textarea cols="25" id="edgesInput" rows="1">0,1,4
+0,2,3
+1,2,1
+1,3,2
+2,3,4
+3,4,2
+4,5,6</textarea>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run Prim's</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (PRIM'S ALGORITHM)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note" style="font-size:12px;">
-                <strong>Time Complexity: O(E log V)</strong><br>
-                Using an Adjacency List and a Priority Queue, we extract the minimum edge at most E times. Each insertion/extraction operation in the Priority Queue takes O(log V) time.<br><br>
-                <strong>Space Complexity: O(V + E)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (PRIM'S ALGORITHM)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note" style="font-size:12px;">
+<strong>Time Complexity: O(E log V)</strong><br/>
+                Using an Adjacency List and a Priority Queue, we extract the minimum edge at most E times. Each insertion/extraction operation in the Priority Queue takes O(log V) time.<br/><br/>
+<strong>Space Complexity: O(V + E)</strong><br/>
                 The graph representation (adjacency list) takes O(V + E) space. The Priority Queue and the boolean `inMST` array take O(E) and O(V) space respectively.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; padding: 12px; margin-bottom: 15px; background: #2d2d2d; border-color: #444;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Total MST Weight <div class="var-value" id="val-weight">0</div></div>
-                <div class="var-box">Nodes in MST <div class="var-value" id="val-nodes">0 / 0</div></div>
-            </div>
-            <h3>Priority Queue (Candidate Edges)</h3>
-            <div id="pq" class="pq-container"></div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Graph Visualization (MST Edges Highlighted)</h3>
-            <svg id="graph" style="flex: 1; min-height: 200px;">
-                <defs>
-                    <filter id="glow-mst" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                    <filter id="glow-active" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="4" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
-            </svg>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; padding: 12px; margin-bottom: 15px; background: #2d2d2d; border-color: #444;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Total MST Weight <div class="var-value" id="val-weight">0</div></div>
+<div class="var-box">Nodes in MST <div class="var-value" id="val-nodes">0 / 0</div></div>
+</div>
+<h3>Priority Queue (Candidate Edges)</h3>
+<div class="pq-container" id="pq"></div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Graph Visualization (MST Edges Highlighted)</h3>
+<svg id="graph" style="flex: 1; min-height: 200px;">
+<defs>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-mst" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<femerge>
+<femergenode in="blur"></femergenode>
+<femergenode in="SourceGraphic"></femergenode>
+</femerge>
+</filter>
+<filter filterunits="userSpaceOnUse" height="200%" id="glow-active" width="200%" x="-50%" y="-50%">
+<fegaussianblur result="blur" stddeviation="4"></fegaussianblur>
+<femerge>
+<femergenode in="blur"></femergenode>
+<femergenode in="SourceGraphic"></femergenode>
+</femerge>
+</filter>
+</defs>
+</svg>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -614,5 +613,13 @@ function pause() { if(timer) clearInterval(timer); }
 
 window.onload = loadSelectedTest;
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

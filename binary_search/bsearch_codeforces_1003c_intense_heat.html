@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>Codeforces 1003C - Intense Heat (Binary Search on Answer) Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -153,89 +154,76 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. Longer optimal window</option>
-            <option value="tc2">2. Decreasing array</option>
-            <option value="tc3">3. Identical elements</option>
-            <option value="tc5">4. Forced entire array</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>a[]:</label>
-        <input id="numsInput" type="text" style="width: 150px;" value="10,10,1,10,10">
-    </div>
-
-    <div class="header-group">
-        <label>k:</label>
-        <input id="kInput" type="number" style="width: 40px;" value="3" min="1">
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run Binary Search</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. Longer optimal window</option>
+<option value="tc2">2. Decreasing array</option>
+<option value="tc3">3. Identical elements</option>
+<option value="tc5">4. Forced entire array</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>a[]:</label>
+<input id="numsInput" style="width: 150px;" type="text" value="10,10,1,10,10"/>
+</div>
+<div class="header-group">
+<label>k:</label>
+<input id="kInput" min="1" style="width: 40px;" type="number" value="3"/>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run Binary Search</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (BINARY SEARCH ON ANSWER)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Mathematical Reduction:</strong><br>
-                Instead of finding a subarray with avg >= `mid` directly, we shift all elements by `-mid`. If the shifted array has a subarray of length >= `k` with sum >= 0, then its original average is >= `mid`.<br><br>
-                <strong>Time Complexity: O(N * log(MAX_VAL/&epsilon;))</strong><br>
-                The binary search runs a fixed number of iterations (e.g., 70 for ~10^-15 precision). Inside the loop, computing prefix sums and finding the max subarray takes O(N).<br><br>
-                <strong>Space Complexity: O(N)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (BINARY SEARCH ON ANSWER)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Mathematical Reduction:</strong><br/>
+                Instead of finding a subarray with avg &gt;= `mid` directly, we shift all elements by `-mid`. If the shifted array has a subarray of length &gt;= `k` with sum &gt;= 0, then its original average is &gt;= `mid`.<br/><br/>
+<strong>Time Complexity: O(N * log(MAX_VAL/ε))</strong><br/>
+                The binary search runs a fixed number of iterations (e.g., 70 for ~10^-15 precision). Inside the loop, computing prefix sums and finding the max subarray takes O(N).<br/><br/>
+<strong>Space Complexity: O(N)</strong><br/>
                 An array `pref` of size `N+1` is allocated in each iteration to store prefix sums.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div id="phaseIndicator" class="phase-indicator">Waiting to Start</div>
-
-            <div class="var-container">
-                <div class="var-box">left<div class="var-value" id="val-left" style="color:var(--danger);">-</div></div>
-                <div class="var-box">mid (guess avg)<div class="var-value" id="val-mid" style="color:var(--active);">-</div></div>
-                <div class="var-box">right<div class="var-value" id="val-right" style="color:var(--danger);">-</div></div>
-                <div class="var-box">Iteration<div class="var-value" id="val-iter" style="color:white;">-</div></div>
-                <div class="var-box">minPref<div class="var-value" id="val-minp" style="color:var(--neighbor);">-</div></div>
-                <div class="var-box">possible<div class="var-value" id="val-possible" style="color:white;">-</div></div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">Shifted Array (a[i] - mid) <span style="font-size: 10px; color: var(--accent); font-weight: normal;">(Highlighted = Valid Window)</span></h3>
-            </div>
-            <div id="shiftedArray" class="array-container" style="margin-bottom: 20px;"></div>
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">Prefix Sum Array (pref)</h3>
-            </div>
-            <div id="prefArray" class="array-container" style="margin-bottom: 10px;"></div>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="phase-indicator" id="phaseIndicator">Waiting to Start</div>
+<div class="var-container">
+<div class="var-box">left<div class="var-value" id="val-left" style="color:var(--danger);">-</div></div>
+<div class="var-box">mid (guess avg)<div class="var-value" id="val-mid" style="color:var(--active);">-</div></div>
+<div class="var-box">right<div class="var-value" id="val-right" style="color:var(--danger);">-</div></div>
+<div class="var-box">Iteration<div class="var-value" id="val-iter" style="color:white;">-</div></div>
+<div class="var-box">minPref<div class="var-value" id="val-minp" style="color:var(--neighbor);">-</div></div>
+<div class="var-box">possible<div class="var-value" id="val-possible" style="color:white;">-</div></div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">Shifted Array (a[i] - mid) <span style="font-size: 10px; color: var(--accent); font-weight: normal;">(Highlighted = Valid Window)</span></h3>
+</div>
+<div class="array-container" id="shiftedArray" style="margin-bottom: 20px;"></div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">Prefix Sum Array (pref)</h3>
+</div>
+<div class="array-container" id="prefArray" style="margin-bottom: 10px;"></div>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -579,5 +567,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

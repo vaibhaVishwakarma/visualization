@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode - Longest Common Subsequence Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -136,74 +137,66 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Presets:</label>
-        <select id="testCases" onchange="loadPreset()">
-            <option value="tc1">1. Main Example ("abcde", "ace")</option>
-            <option value="tc2">2. Full Match ("leetcode", "leetc")</option>
-            <option value="tc3">3. No Match ("abc", "def")</option>
-            <option value="tc4">4. Interleaved ("abc", "acb")</option>
-        </select>
-    </div>
-    <div class="header-group">
-        <label>Text 1 (Rows):</label>
-        <input id="text1Input" type="text" style="width: 100px;" value="abcde">
-    </div>
-    <div class="header-group">
-        <label>Text 2 (Cols):</label>
-        <input id="text2Input" type="text" style="width: 100px;" value="ace">
-    </div>
-    <button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+<div class="header-group">
+<label>Presets:</label>
+<select id="testCases" onchange="loadPreset()">
+<option value="tc1">1. Main Example ("abcde", "ace")</option>
+<option value="tc2">2. Full Match ("leetcode", "leetc")</option>
+<option value="tc3">3. No Match ("abc", "def")</option>
+<option value="tc4">4. Interleaved ("abc", "acb")</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Text 1 (Rows):</label>
+<input id="text1Input" style="width: 100px;" type="text" value="abcde"/>
+</div>
+<div class="header-group">
+<label>Text 2 (Cols):</label>
+<input id="text2Input" style="width: 100px;" type="text" value="ace"/>
+</div>
+<button class="primary" onclick="generateSimulation()">Initialize Grid</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">Java LCS Source Execution</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3>Subproblem Equations</h3>
-            <div class="footer-note">
-                If <code style="color:var(--accent)">text1[i-1] == text2[j-1]</code>:<br>
-                &nbsp;&nbsp;<strong>dp[i][j] = 1 + dp[i-1][j-1]</strong> (Diagonal Match)<br>
-                Else:<br>
-                &nbsp;&nbsp;<strong>dp[i][j] = max(dp[i-1][j], dp[i][j-1])</strong> (Max Upper / Left)
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">Java LCS Source Execution</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3>Subproblem Equations</h3>
+<div class="footer-note">
+                If <code style="color:var(--accent)">text1[i-1] == text2[j-1]</code>:<br/>
+                  <strong>dp[i][j] = 1 + dp[i-1][j-1]</strong> (Diagonal Match)<br/>
+                Else:<br/>
+                  <strong>dp[i][j] = max(dp[i-1][j], dp[i][j-1])</strong> (Max Upper / Left)
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Row Character (i)<div class="var-value" id="val-i">-</div></div>
-                <div class="var-box">Col Character (j)<div class="var-value" id="val-j">-</div></div>
-                <div class="var-box">LCS StringBuilder<div class="var-value" id="val-lcs" style="color:var(--accent);">-</div></div>
-            </div>
-
-            <h3>Dynamic Programming Matrix Graph</h3>
-            <div class="table-scroll">
-                <table id="dpMatrixTable" class="dp-table"></table>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Step Analysis Logger</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Row Character (i)<div class="var-value" id="val-i">-</div></div>
+<div class="var-box">Col Character (j)<div class="var-value" id="val-j">-</div></div>
+<div class="var-box">LCS StringBuilder<div class="var-value" id="val-lcs" style="color:var(--accent);">-</div></div>
+</div>
+<h3>Dynamic Programming Matrix Graph</h3>
+<div class="table-scroll">
+<table class="dp-table" id="dpMatrixTable"></table>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Step Analysis Logger</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER RESIZE LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -511,5 +504,13 @@ window.onload = () => {
     generateSimulation();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

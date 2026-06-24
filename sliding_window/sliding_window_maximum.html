@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 239 - Sliding Window Maximum Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -150,85 +151,72 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. LC Example 1</option>
-            <option value="tc2">2. Single Element</option>
-            <option value="tc3">3. Monotonic Decreasing</option>
-            <option value="tc4">4. Window = Array Size</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>a (Array):</label>
-        <input id="numsInput" type="text" style="width: 200px;" value="1,3,-1,-3,5,3,6,7">
-    </div>
-
-    <div class="header-group">
-        <label>k (Window):</label>
-        <input id="kInput" type="number" style="width: 40px;" value="3" min="1">
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. LC Example 1</option>
+<option value="tc2">2. Single Element</option>
+<option value="tc3">3. Monotonic Decreasing</option>
+<option value="tc4">4. Window = Array Size</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>a (Array):</label>
+<input id="numsInput" style="width: 200px;" type="text" value="1,3,-1,-3,5,3,6,7"/>
+</div>
+<div class="header-group">
+<label>k (Window):</label>
+<input id="kInput" min="1" style="width: 40px;" type="number" value="3"/>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (MONOTONIC QUEUE)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(N)</strong><br>
-                Every element from the array is added to the Deque exactly once and removed at most once. Amortized time per element is O(1).<br><br>
-                <strong>Space Complexity: O(K)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (MONOTONIC QUEUE)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(N)</strong><br/>
+                Every element from the array is added to the Deque exactly once and removed at most once. Amortized time per element is O(1).<br/><br/>
+<strong>Space Complexity: O(K)</strong><br/>
                 The Deque `q` stores at most `k` elements at any given time (the indices of elements in the current window). The result array `r` takes O(N - K + 1) space.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Current Index i<div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
-                <div class="var-box">Current Value a[i]<div class="var-value" id="val-ai" style="color:white;">-</div></div>
-                <div class="var-box">Result Index ri<div class="var-value" id="val-ri" style="color:var(--accent);">-</div></div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">Input Array a[] <span style="font-size: 10px; color: var(--neighbor); font-weight: normal;">(Highlighted = Window)</span></h3>
-            </div>
-            <div id="numsArray" class="array-container" style="margin-bottom: 20px;"></div>
-
-            <h3 style="margin-bottom: 5px;">Deque q (Stores Indices, Displays Values)</h3>
-            <div id="deque" class="deque-container" style="margin-bottom: 20px;"></div>
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">Result Array r[]</h3>
-            </div>
-            <div id="resultArray" class="array-container"></div>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Current Index i<div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+<div class="var-box">Current Value a[i]<div class="var-value" id="val-ai" style="color:white;">-</div></div>
+<div class="var-box">Result Index ri<div class="var-value" id="val-ri" style="color:var(--accent);">-</div></div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">Input Array a[] <span style="font-size: 10px; color: var(--neighbor); font-weight: normal;">(Highlighted = Window)</span></h3>
+</div>
+<div class="array-container" id="numsArray" style="margin-bottom: 20px;"></div>
+<h3 style="margin-bottom: 5px;">Deque q (Stores Indices, Displays Values)</h3>
+<div class="deque-container" id="deque" style="margin-bottom: 20px;"></div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">Result Array r[]</h3>
+</div>
+<div class="array-container" id="resultArray"></div>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -527,5 +515,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

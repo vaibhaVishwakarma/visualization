@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 673 - Number of LIS Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
 <style>
@@ -132,68 +133,61 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Presets:</label>
-        <select id="testCases" onchange="loadPreset()">
-            <option value="tc1">1. Multiple LIS paths [1, 3, 5, 4, 7] -> Ans: 2 (Paths: 1->3->5->7, 1->3->4->7)</option>
-            <option value="tc2">2. Identical Values [2, 2, 2, 2, 2] -> Ans: 5 (Each index standalone length 1)</option>
-            <option value="tc3">3. Escalation Jump [1, 2, 4, 3, 5, 4, 7] -> Ans: 3</option>
-        </select>
-    </div>
-    <div class="header-group">
-        <label>Input Array (nums):</label>
-        <input id="arrayInput" type="text" style="width: 220px;" value="1, 3, 5, 4, 7">
-    </div>
-    <button class="primary" onclick="generateSimulation()">Initialize Analysis</button>
+<div class="header-group">
+<label>Presets:</label>
+<select id="testCases" onchange="loadPreset()">
+<option value="tc1">1. Multiple LIS paths [1, 3, 5, 4, 7] -&gt; Ans: 2 (Paths: 1-&gt;3-&gt;5-&gt;7, 1-&gt;3-&gt;4-&gt;7)</option>
+<option value="tc2">2. Identical Values [2, 2, 2, 2, 2] -&gt; Ans: 5 (Each index standalone length 1)</option>
+<option value="tc3">3. Escalation Jump [1, 2, 4, 3, 5, 4, 7] -&gt; Ans: 3</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Input Array (nums):</label>
+<input id="arrayInput" style="width: 220px;" type="text" value="1, 3, 5, 4, 7"/>
+</div>
+<button class="primary" onclick="generateSimulation()">Initialize Analysis</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">C++ Multi-State LIS Branching</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3>Combination Tracking Rules</h3>
-            <div class="footer-note">
-                • <strong>If length increases (`dp[i] < dp[prev] + 1`)</strong>:<br>
-                &nbsp;&nbsp;A strictly longer path has been opened up. Overwrite length and reset combinations from the contributor branch: `cnts[i] = cnts[prev]`.
-                <hr style="border-color:#333; margin: 6px 0;">
-                • <strong>If length ties (`dp[i] == dp[prev] + 1`)</strong>:<br>
-                &nbsp;&nbsp;An alternate routing can match the current max length record. Accumulate the total counts: `cnts[i] += cnts[prev]`.
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">C++ Multi-State LIS Branching</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3>Combination Tracking Rules</h3>
+<div class="footer-note">
+                • <strong>If length increases (`dp[i] &lt; dp[prev] + 1`)</strong>:<br/>
+                  A strictly longer path has been opened up. Overwrite length and reset combinations from the contributor branch: `cnts[i] = cnts[prev]`.
+                <hr style="border-color:#333; margin: 6px 0;"/>
+                • <strong>If length ties (`dp[i] == dp[prev] + 1`)</strong>:<br/>
+                  An alternate routing can match the current max length record. Accumulate the total counts: `cnts[i] += cnts[prev]`.
             </div>
-        </div>
-    </div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Pointers (i, prev)<div class="var-value" id="val-ptrs">-</div></div>
-                <div class="var-box">Values (nums[i] &gt; nums[prev])<div class="var-value" id="val-vals">-</div></div>
-                <div class="var-box">Global Max Length<div class="var-value" id="val-maxl" style="color:var(--active);">-</div></div>
-            </div>
-
-            <h3>Dual State Vector Grid Tracking</h3>
-            <div class="table-scroll">
-                <table id="dpMatrixTable" class="dp-table"></table>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Step Analysis Logger</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Pointers (i, prev)<div class="var-value" id="val-ptrs">-</div></div>
+<div class="var-box">Values (nums[i] &gt; nums[prev])<div class="var-value" id="val-vals">-</div></div>
+<div class="var-box">Global Max Length<div class="var-value" id="val-maxl" style="color:var(--active);">-</div></div>
+</div>
+<h3>Dual State Vector Grid Tracking</h3>
+<div class="table-scroll">
+<table class="dp-table" id="dpMatrixTable"></table>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Step Analysis Logger</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 const CPP_CODE = [
     "int findNumberOfLIS(vector<int>& nums) {",
@@ -438,5 +432,13 @@ window.onload = () => {
     generateSimulation();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

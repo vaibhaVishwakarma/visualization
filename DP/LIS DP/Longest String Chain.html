@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 1048 - Longest String Chain Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
 <style>
@@ -130,65 +131,58 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Presets:</label>
-        <select id="testCases" onchange="loadPreset()">
-            <option value="tc1">1. Default Mix ["a", "b", "ba", "bca", "bda", "bdca"] -> Ans: 4</option>
-            <option value="tc2">2. Single Letter Chains ["x", "xx", "xxx", "xxxx"] -> Ans: 4</option>
-            <option value="tc3">3. No Links Match ["abc", "bcd", "acef"] -> Ans: 1</option>
-        </select>
-    </div>
-    <div class="header-group">
-        <label>Input Words Array:</label>
-        <input id="arrayInput" type="text" style="width: 250px;" value="a, b, ba, bca, bda, bdca">
-    </div>
-    <button class="primary" onclick="generateSimulation()">Initialize Matrix</button>
+<div class="header-group">
+<label>Presets:</label>
+<select id="testCases" onchange="loadPreset()">
+<option value="tc1">1. Default Mix ["a", "b", "ba", "bca", "bda", "bdca"] -&gt; Ans: 4</option>
+<option value="tc2">2. Single Letter Chains ["x", "xx", "xxx", "xxxx"] -&gt; Ans: 4</option>
+<option value="tc3">3. No Links Match ["abc", "bcd", "acef"] -&gt; Ans: 1</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Input Words Array:</label>
+<input id="arrayInput" style="width: 250px;" type="text" value="a, b, ba, bca, bda, bdca"/>
+</div>
+<button class="primary" onclick="generateSimulation()">Initialize Matrix</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">C++ String LIS Method</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3>Chain Length Constraints</h3>
-            <div class="footer-note">
-                • <strong>Length Balance</strong>: `s1.size() == s2.size() + 1` must hold true before character scanning.<br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">C++ String LIS Method</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3>Chain Length Constraints</h3>
+<div class="footer-note">
+                • <strong>Length Balance</strong>: `s1.size() == s2.size() + 1` must hold true before character scanning.<br/>
                 • <strong>Two-Pointer Scan</strong>: Verifies if inserting exactly one letter into `words[prev]` builds `words[i]`.
             </div>
-        </div>
-    </div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Pointers (i, prev)<div class="var-value" id="val-ptrs">-</div></div>
-                <div class="var-box">Evaluating Node Strings<div class="var-value" id="val-vals">-</div></div>
-                <div class="var-box">Max Chain Score<div class="var-value" id="val-maxi" style="color:var(--accent);">-</div></div>
-            </div>
-
-            <h3>Dynamic Subsequence Chain Length State</h3>
-            <div class="table-scroll">
-                <table id="dpMatrixTable" class="dp-table"></table>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Step Analysis Logger</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play Flow</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Pointers (i, prev)<div class="var-value" id="val-ptrs">-</div></div>
+<div class="var-box">Evaluating Node Strings<div class="var-value" id="val-vals">-</div></div>
+<div class="var-box">Max Chain Score<div class="var-value" id="val-maxi" style="color:var(--accent);">-</div></div>
+</div>
+<h3>Dynamic Subsequence Chain Length State</h3>
+<div class="table-scroll">
+<table class="dp-table" id="dpMatrixTable"></table>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Step Analysis Logger</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 const CPP_CODE = [
     "int longestStrChain(vector<string>& words) {",
@@ -407,5 +401,13 @@ window.onload = () => {
     generateSimulation();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

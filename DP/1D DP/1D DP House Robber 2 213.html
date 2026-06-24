@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 213 - House Robber II (1D DP) Visualizer</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -144,81 +145,70 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
-            <option value="tc1">1. LC Example 1 (2,3,2)</option>
-            <option value="tc2">2. LC Example 2 (1,2,3,1)</option>
-            <option value="tc3">3. High Values (1,2,3)</option>
-            <option value="tc4">4. Single House (5)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>Nums Array:</label>
-        <input id="numsInput" type="text" style="width: 200px;" value="2,3,2">
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest(); prepareExecution();">
+<option value="tc1">1. LC Example 1 (2,3,2)</option>
+<option value="tc2">2. LC Example 2 (1,2,3,1)</option>
+<option value="tc3">3. High Values (1,2,3)</option>
+<option value="tc4">4. Single House (5)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>Nums Array:</label>
+<input id="numsInput" style="width: 200px;" type="text" value="2,3,2"/>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run DP</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">JAVA CODE (SPACE OPTIMIZED DP)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(N)</strong><br>
-                The algorithm runs the linear house robber routine twice. Each routine iterates through approximately N-1 elements. Total time is linear.<br><br>
-                <strong>Space Complexity: O(1)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">JAVA CODE (SPACE OPTIMIZED DP)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(N)</strong><br/>
+                The algorithm runs the linear house robber routine twice. Each routine iterates through approximately N-1 elements. Total time is linear.<br/><br/>
+<strong>Space Complexity: O(1)</strong><br/>
                 By using `prev1` and `prev2` to keep track of the max loot from the last two houses, the space is reduced to constant O(1) memory, instead of an O(N) DP array.
             </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">i<div class="var-value" id="val-i" style="color:var(--accent);">-</div></div>
-                <div class="var-box">curr<div class="var-value" id="val-curr" style="color:var(--active);">-</div></div>
-                <div class="var-box">prev1<div class="var-value" id="val-prev1" style="color:var(--neighbor);">-</div></div>
-                <div class="var-box">prev2<div class="var-value" id="val-prev2" style="color:var(--neighbor);">-</div></div>
-                <div class="var-box">Case 1 Max<div class="var-value" id="val-max1" style="color:var(--accent);">-</div></div>
-                <div class="var-box">Case 2 Max<div class="var-value" id="val-max2" style="color:var(--accent);">-</div></div>
-                <div class="var-box">Final Max<div class="var-value" id="val-final" style="color:var(--accent);">-</div></div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">nums[] (House Values) - <span id="lbl-case" style="color:var(--active);">Not Started</span></h3>
-            </div>
-            <div id="numsArray" class="array-container" style="margin-bottom: 30px;"></div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <h3>Circular Neighborhood Visualization</h3>
-            <svg id="graph" style="flex: 1; min-height: 180px;"></svg>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">i<div class="var-value" id="val-i" style="color:var(--accent);">-</div></div>
+<div class="var-box">curr<div class="var-value" id="val-curr" style="color:var(--active);">-</div></div>
+<div class="var-box">prev1<div class="var-value" id="val-prev1" style="color:var(--neighbor);">-</div></div>
+<div class="var-box">prev2<div class="var-value" id="val-prev2" style="color:var(--neighbor);">-</div></div>
+<div class="var-box">Case 1 Max<div class="var-value" id="val-max1" style="color:var(--accent);">-</div></div>
+<div class="var-box">Case 2 Max<div class="var-value" id="val-max2" style="color:var(--accent);">-</div></div>
+<div class="var-box">Final Max<div class="var-value" id="val-final" style="color:var(--accent);">-</div></div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">nums[] (House Values) - <span id="lbl-case" style="color:var(--active);">Not Started</span></h3>
+</div>
+<div class="array-container" id="numsArray" style="margin-bottom: 30px;"></div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<h3>Circular Neighborhood Visualization</h3>
+<svg id="graph" style="flex: 1; min-height: 180px;"></svg>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -577,5 +567,13 @@ window.onload = () => {
     prepareExecution();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>

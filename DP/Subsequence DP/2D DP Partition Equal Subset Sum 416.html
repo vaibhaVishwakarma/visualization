@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>LeetCode 416 - Partition Equal Subset Sum (2D DP)</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
     :root {
@@ -148,80 +149,70 @@
 </style>
 </head>
 <body>
-
 <div class="header">
-    <div class="header-group">
-        <label>Test Cases:</label>
-        <select id="testCases" onchange="loadSelectedTest()">
-            <option value="tc1">1. LC Example 1 (1,5,11,5)</option>
-            <option value="tc2">2. LC Example 2 (1,2,3,5)</option>
-            <option value="tc3">3. Small Target (1,2,5)</option>
-            <option value="tc4">4. Exactly Divisible (2,2,4)</option>
-        </select>
-    </div>
-
-    <div class="header-group">
-        <label>nums = [</label>
-        <input id="numsInput" type="text" style="width: 150px;" value="1,5,11,5">
-        <label>]</label>
-    </div>
-
-    <button class="primary" onclick="prepareExecution()">Build & Run DP</button>
+<div class="header-group">
+<label>Test Cases:</label>
+<select id="testCases" onchange="loadSelectedTest()">
+<option value="tc1">1. LC Example 1 (1,5,11,5)</option>
+<option value="tc2">2. LC Example 2 (1,2,3,5)</option>
+<option value="tc3">3. Small Target (1,2,5)</option>
+<option value="tc4">4. Exactly Divisible (2,2,4)</option>
+</select>
 </div>
-
+<div class="header-group">
+<label>nums = [</label>
+<input id="numsInput" style="width: 150px;" type="text" value="1,5,11,5"/>
+<label>]</label>
+</div>
+<button class="primary" onclick="prepareExecution()">Build &amp; Run DP</button>
+</div>
 <div class="main">
-    <div class="left-panel" id="leftPanel">
-        <h3 style="margin-bottom: 5px;">PYTHON CODE (2D DP)</h3>
-        <div id="code" class="code-container"></div>
-        <br>
-        <div class="panel" style="margin:0; padding:12px;">
-            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
-            <div class="footer-note">
-                <strong>Time Complexity: O(N &times; Target)</strong><br>
-                Where N is the number of elements and Target is half of the total sum. The algorithm iterates through every element for every possible sum up to the target, performing O(1) checks per cell.<br><br>
-                <strong>Space Complexity: O(N &times; Target)</strong><br>
+<div class="left-panel" id="leftPanel">
+<h3 style="margin-bottom: 5px;">PYTHON CODE (2D DP)</h3>
+<div class="code-container" id="code"></div>
+<br/>
+<div class="panel" style="margin:0; padding:12px;">
+<h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+<div class="footer-note">
+<strong>Time Complexity: O(N × Target)</strong><br/>
+                Where N is the number of elements and Target is half of the total sum. The algorithm iterates through every element for every possible sum up to the target, performing O(1) checks per cell.<br/><br/>
+<strong>Space Complexity: O(N × Target)</strong><br/>
                 We construct a 2D boolean `dp` array of size `N x (Target + 1)` to store whether a specific sum is achievable using a subset of the elements up to index `i`. <i>(Note: Can be optimized to O(Target) by only keeping the previous row).</i>
-            </div>
-        </div>
-    </div>
-
-    <div class="resizer" id="dragMe"></div>
-
-    <div class="right-panel">
-        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
-            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
-            <button onclick="pause()">⏸ Pause</button>
-            <button onclick="prevStep()">⏮ Step Back</button>
-            <button onclick="nextStep()">⏭ Next Step</button>
-        </div>
-
-        <div class="panel">
-            <div class="var-container">
-                <div class="var-box">Total Sum <div class="var-value" id="val-sum">-</div></div>
-                <div class="var-box">Target Sum <div class="var-value" id="val-target" style="color:white;">-</div></div>
-                <div class="var-box">Curr Item (nums[i]) <div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
-                <div class="var-box">Curr Target (t) <div class="var-value" id="val-t" style="color:var(--active);">-</div></div>
-                <div class="var-box">notTaken <div class="var-value" id="val-not" style="color:var(--neighbor);">-</div></div>
-                <div class="var-box">taken <div class="var-value" id="val-taken" style="color:var(--neighbor);">-</div></div>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
-                <h3 style="margin:0;">dp[][] Matrix (Rows = items, Cols = sums 0 to Target)</h3>
-            </div>
-            <div class="matrix-wrapper" style="flex: 1;">
-                <div id="dpMatrix" class="matrix-grid"></div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <h3>Execution Log</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
 </div>
-
+</div>
+</div>
+<div class="resizer" id="dragMe"></div>
+<div class="right-panel">
+<div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+<button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="prevStep()">⏮ Step Back</button>
+<button onclick="nextStep()">⏭ Next Step</button>
+</div>
+<div class="panel">
+<div class="var-container">
+<div class="var-box">Total Sum <div class="var-value" id="val-sum">-</div></div>
+<div class="var-box">Target Sum <div class="var-value" id="val-target" style="color:white;">-</div></div>
+<div class="var-box">Curr Item (nums[i]) <div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+<div class="var-box">Curr Target (t) <div class="var-value" id="val-t" style="color:var(--active);">-</div></div>
+<div class="var-box">notTaken <div class="var-value" id="val-not" style="color:var(--neighbor);">-</div></div>
+<div class="var-box">taken <div class="var-value" id="val-taken" style="color:var(--neighbor);">-</div></div>
+</div>
+</div>
+<div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+<h3 style="margin:0;">dp[][] Matrix (Rows = items, Cols = sums 0 to Target)</h3>
+</div>
+<div class="matrix-wrapper" style="flex: 1;">
+<div class="matrix-grid" id="dpMatrix"></div>
+</div>
+</div>
+<div class="panel">
+<h3>Execution Log</h3>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
 <script>
 // --- SPLITTER / RESIZER LOGIC ---
 const resizer = document.getElementById('dragMe');
@@ -517,5 +508,13 @@ window.onload = () => {
     loadSelectedTest();
 };
 </script>
-</body>
+<script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') {
+                if (typeof nextStep === 'function') nextStep();
+            } else if (event.key === 'ArrowLeft') {
+                if (typeof prevStep === 'function') prevStep();
+            }
+        });
+        </script></body>
 </html>
