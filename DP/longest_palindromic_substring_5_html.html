@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetCode 5 - Longest Palindromic Substring (Manacher's Algorithm) Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+    :root {
+        --bg-main: #1e1e1e;    /* VS Code Main Dark */
+        --bg-panel: #252526;   /* VS Code Panel Dark */
+        --bg-header: #333333;
+        --text-main: #d4d4d4;
+        
+        --accent: #4caf50;     /* Green for Center (C) / success */
+        --active: #ff9800;     /* Orange for current index (i) */
+        --neighbor: #2196f3;   /* Blue for mirror index */
+        --purple: #9c27b0;     /* Purple for Right Boundary (R) */
+        --danger: #f44336;     /* Red for mismatch / boundary failure */
+        --border: #444;
+    }
+
+    body {
+        margin: 0; background: var(--bg-main); color: var(--text-main);
+        font-family: 'Segoe UI', Consolas, monospace; height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    /* Header Controls */
+    .header {
+        padding: 12px 20px; background: var(--bg-header); border-bottom: 1px solid #111;
+        display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 20;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header-group {
+        display: flex; align-items: center; gap: 8px; background: var(--bg-panel);
+        padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border);
+    }
+    select, input, button, textarea {
+        background: var(--bg-main); color: white; border: 1px solid #555;
+        padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+    }
+    button { cursor: pointer; transition: 0.2s; }
+    button:hover { background: #555; }
+    button.primary { background: #007acc; font-weight: bold; border:none; }
+    button.primary:hover { background: #005f9e; }
+
+    /* Main Flex Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Panel (Code) */
+    .left-panel {
+        width: 550px; min-width: 250px; max-width: 75vw;
+        display: flex; flex-direction: column; background: var(--bg-main); padding: 15px;
+    }
+
+    /* Resizer (Draggable Splitter) */
+    .resizer {
+        width: 6px; background: #2d2d2d; cursor: col-resize; transition: background 0.2s;
+        display: flex; justify-content: center; align-items: center; z-index: 10;
+        border-left: 1px solid #111; border-right: 1px solid #111;
+    }
+    .resizer:hover, .resizer.resizing { background: #007acc; }
+    .resizer::after { content: "⋮"; color: #888; font-size: 14px; }
+
+    /* Right Panel (Visualization) */
+    .right-panel {
+        flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; min-width: 300px;
+        background: #121212;
+    }
+
+    .panel {
+        margin-bottom: 15px; background: var(--bg-panel); border-radius: 6px; padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+
+    /* Code Block & VS Code Syntax Highlighting */
+    .code-container {
+        flex: 1; overflow: auto; background: #1e1e1e; border-radius: 4px; padding: 0;
+        border: 1px solid #333; display: flex; min-height: 200px;
+    }
+    .code-wrapper { display: flex; width: 100%; flex: 1; }
+    .code-line-numbers {
+        background: #252526; color: #858585; padding: 10px 12px; border-right: 1px solid #3e3e42;
+        user-select: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        text-align: right; min-width: 30px; overflow: hidden; flex-shrink: 0;
+    }
+    .code-line-number { padding: 0; display: block; }
+    .code-lines { flex: 1; overflow: auto; }
+    .code-lines pre { margin: 0; padding: 10px; background: transparent; border: none; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5; }
+    .code-lines code { font-family: Consolas, monospace; font-size: 13px; background: transparent; padding: 0; }
+    .hljs { background: transparent !important; color: #d4d4d4; }
+    .code-line { padding: 0 8px; white-space: pre; border-radius: 0; border-left: 3px solid transparent; display: block; }
+    .active-line { background: rgba(255, 213, 79, 0.15); border-left: 3px solid #ffd54f; }
+
+    /* Variables & Arrays */
+    .var-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;}
+    .var-box {
+        background: #1e1e1e; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; text-align: center; flex: 1;
+        font-size: 13px; color: #bbb;
+    }
+    .var-value { font-size: 18px; font-weight: bold; margin-top: 4px; font-family: Consolas;}
+    
+    .array-container { display: flex; gap: 4px; overflow-x: auto; padding: 5px 0 25px 0;}
+    .array-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; position: relative;}
+    .array-idx { font-size: 11px; color: #888; margin-bottom: 2px; font-family: Consolas; }
+    .array-cell {
+        width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+        border: 2px solid #555; border-radius: 6px; background: #1e1e1e; font-weight: bold; font-size: 15px;
+        transition: all 0.3s; font-family: Consolas; color: #d4d4d4;
+    }
+    
+    /* Array Cell Highlights */
+    .cell-i { border-color: var(--active); box-shadow: 0 0 12px rgba(255, 152, 0, 0.6); color: var(--active); transform: scale(1.1); z-index: 5;}
+    .cell-c { border-color: var(--accent); box-shadow: 0 0 12px rgba(76, 175, 80, 0.6); color: var(--accent); transform: scale(1.1); z-index: 4;}
+    .cell-mirror { border-color: var(--neighbor); box-shadow: 0 0 12px rgba(33, 150, 243, 0.6); color: var(--neighbor); transform: scale(1.1); z-index: 4;}
+    .cell-r { border-right: 4px solid var(--purple) !important; box-shadow: 5px 0 10px rgba(156, 39, 176, 0.4); z-index: 3;}
+    .cell-compare { background: rgba(255, 255, 255, 0.1); border-color: white; color: white;}
+    .cell-fail { background: rgba(244, 67, 54, 0.2); border-color: var(--danger); color: var(--danger);}
+
+    .cell-p-update { background: rgba(76, 175, 80, 0.2); color: var(--accent); transform: scale(1.1); }
+    .cell-ans { background: rgba(255, 152, 0, 0.2); color: var(--active); box-shadow: 0 0 15px rgba(255, 152, 0, 0.6); }
+
+    .ptr-label {
+        position: absolute; bottom: -22px; font-size: 11px; font-weight: bold; font-family: Consolas; white-space: nowrap; color: #aaa;
+    }
+    
+    /* Phase UI */
+    .phase-indicator {
+        padding: 8px 12px; background: #2d2d2d; border-radius: 6px; border: 1px solid #444; font-weight: bold;
+        text-align: center; margin-bottom: 15px; color: var(--active); font-size: 15px; font-family: Consolas;
+    }
+
+    /* Log */
+    .log {
+        height: 160px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; line-height: 1.5;
+        padding: 10px; background: #1e1e1e; border-radius: 4px; border: 1px solid #444;
+    }
+    .log-success { color: var(--accent); font-weight: bold; }
+    .log-update { color: var(--active); }
+    .log-danger { color: var(--danger); font-style: italic;}
+    .log-info { color: var(--neighbor); }
+    .log-purple { color: var(--purple); }
+    
+    .footer-note {
+        font-size: 12px; color: #bbb; line-height: 1.5; background: #1e1e1e; padding: 10px; border-radius: 6px; border-left: 4px solid var(--active);
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-group">
+        <label>Test Cases:</label>
+        <select id="testCases" onchange="loadSelectedTest()">
+            <option value="tc1">1. LC Example 1 ("babad")</option>
+            <option value="tc2">2. LC Example 2 ("cbbd")</option>
+            <option value="tc3">3. All same ("aaaa")</option>
+            <option value="tc4">4. Single char ("a")</option>
+        </select>
+    </div>
+
+    <div class="header-group">
+        <label>String (s):</label>
+        <input id="sInput" type="text" style="width: 150px;" value="babad">
+    </div>
+
+    <button class="primary" onclick="prepareExecution()">Build & Run Manacher's</button>
+</div>
+
+<div class="main">
+    <div class="left-panel" id="leftPanel">
+        <h3 style="margin-bottom: 5px;">JAVA CODE (MANACHER'S ALGORITHM)</h3>
+        <div id="code" class="code-container"></div>
+        <br>
+        <div class="panel" style="margin:0; padding:12px;">
+            <h3 style="margin-bottom: 5px;">Complexity Analysis</h3>
+            <div class="footer-note">
+                <strong>Core Logic:</strong><br>
+                Manacher's Algorithm transforms the string by inserting a special character (e.g., `#`) between every character to handle both even and odd length palindromes uniformly. It utilizes a `P` array to store the palindrome radius at each center. By maintaining the rightmost palindrome boundary `R` and its center `C`, it uses previously computed values in `P` (via the `mirror` index) to skip redundant character comparisons.<br><br>
+                <strong>Time Complexity: O(N)</strong><br>
+                Although there is a nested `while` loop, the right boundary `R` strictly increases. Every successful character comparison inside the `while` loop expands `R`. Since `R` can at most reach `2N+3`, the inner loop runs at most `O(N)` times overall. Thus, the entire algorithm runs in linear time.<br><br>
+                <strong>Space Complexity: O(N)</strong><br>
+                We create a transformed string `T` of size `2N + 3` and a `P` array of the same size.
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <div class="right-panel">
+        <div class="panel" style="display: flex; gap: 10px; background: #2d2d2d; border-color: #444; margin-bottom: 15px; padding: 12px;">
+            <button onclick="play()" style="background:#4caf50; color:white; font-weight:bold;">▶ Play</button>
+            <button onclick="pause()">⏸ Pause</button>
+            <button onclick="prevStep()">⏮ Step Back</button>
+            <button onclick="nextStep()">⏭ Next Step</button>
+        </div>
+
+        <div class="panel">
+            <div id="phaseIndicator" class="phase-indicator">Waiting to Start</div>
+
+            <div class="var-container">
+                <div class="var-box" style="border-color: var(--accent);">Center (C)<div class="var-value" id="val-C" style="color:var(--accent);">-</div></div>
+                <div class="var-box" style="border-color: var(--purple);">Right Bound (R)<div class="var-value" id="val-R" style="color:var(--purple);">-</div></div>
+                <div class="var-box" style="border-color: var(--active);">Index (i)<div class="var-value" id="val-i" style="color:var(--active);">-</div></div>
+                <div class="var-box" style="border-color: var(--neighbor);">Mirror (mir)<div class="var-value" id="val-mirror" style="color:var(--neighbor);">-</div></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Transformed String (T)</h3>
+            </div>
+            <div id="tArray" class="array-container" style="margin-bottom: 15px;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                <h3 style="margin:0;">Palindrome Radius Array (P)</h3>
+            </div>
+            <div id="pArray" class="array-container" style="margin-bottom: 10px;"></div>
+        </div>
+
+        <div class="panel" style="flex: 1;">
+            <h3>Execution Log</h3>
+            <div class="log" id="log" style="height: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- SPLITTER / RESIZER LOGIC ---
+const resizer = document.getElementById('dragMe');
+const leftPanel = document.getElementById('leftPanel');
+let isResizing = false;
+let startX, startWidth;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = leftPanel.getBoundingClientRect().width;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    if (newWidth >= 250 && newWidth <= window.innerWidth * 0.75) {
+        leftPanel.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+    }
+});
+
+// --- ALGORITHM LOGIC ---
+const JAVA_CODE = [
+    "class Solution {",
+    "    public String longestPalindrome(String s) {",
+    "        if (s == null || s.length() == 0) return \"\";",
+    "        ",
+    "        // Transform S into T. For example, S = \"abba\", T = \"^#a#b#b#a#$\"",
+    "        StringBuilder T = new StringBuilder(\"^\");",
+    "        for (int i = 0; i < s.length(); i++) {",
+    "            T.append(\"#\").append(s.charAt(i));",
+    "        }",
+    "        T.append(\"#$\");",
+    "        ",
+    "        int n = T.length();",
+    "        int[] P = new int[n];",
+    "        int C = 0, R = 0;",
+    "        ",
+    "        for (int i = 1; i < n - 1; i++) {",
+    "            int mirror = 2 * C - i;",
+    "            ",
+    "            if (i < R) {",
+    "                P[i] = Math.min(R - i, P[mirror]);",
+    "            }",
+    "            ",
+    "            // Expand palindrome centered at i",
+    "            while (T.charAt(i + 1 + P[i]) == T.charAt(i - 1 - P[i])) {",
+    "                P[i]++;",
+    "            }",
+    "            ",
+    "            // If palindrome centered at i expands past R, adjust center",
+    "            if (i + P[i] > R) {",
+    "                C = i;",
+    "                R = i + P[i];",
+    "            }",
+    "        }",
+    "        ",
+    "        int maxLen = 0, centerIndex = 0;",
+    "        for (int i = 1; i < n - 1; i++) {",
+    "            if (P[i] > maxLen) {",
+    "                maxLen = P[i];",
+    "                centerIndex = i;",
+    "            }",
+    "        }",
+    "        ",
+    "        int start = (centerIndex - maxLen) / 2;",
+    "        return s.substring(start, start + maxLen);",
+    "    }",
+    "}"
+];
+
+const TEST_CASES = {
+    tc1: "babad",
+    tc2: "cbbd",
+    tc3: "aaaa",
+    tc4: "a"
+};
+
+let events = [], ptr = 0, autoTimer = null;
+
+function renderCode() {
+    let lineNumbers = JAVA_CODE.map((_, i) => `<div class='code-line-number' id='linenum${i+1}'>${i + 1}</div>`).join('');
+    let codeText = JAVA_CODE.join('\n');
+    let highlightedLines;
+    try {
+        let highlightedCode = hljs.highlight(codeText, { language: 'java' }).value;
+        highlightedLines = highlightedCode.split('\n');
+    } catch(e) {
+        highlightedLines = codeText.split('\n');
+    }
+    
+    let wrappedLines = highlightedLines.map((line, i) => `<div class='code-line' id='line${i+1}'>${line || ' '}</div>`).join('');
+    let codeHtml = `<pre><code class="hljs java">${wrappedLines}</code></pre>`;
+    
+    document.getElementById("code").innerHTML = `<div class='code-wrapper'><div class='code-line-numbers'>${lineNumbers}</div><div class='code-lines'>${codeHtml}</div></div>`;
+}
+renderCode();
+
+function highlight(line) {
+    document.querySelectorAll(".code-line").forEach(x => x.classList.remove("active-line"));
+    if(line !== null && line !== undefined) {
+        let el = document.getElementById("line" + line);
+        if(el) {
+            el.classList.add("active-line");
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+    }
+}
+
+function log(msg, type = "") {
+    const div = document.getElementById("log");
+    div.innerHTML += `<div class="${type}">${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+}
+
+function loadSelectedTest() {
+    const tc = TEST_CASES[document.getElementById("testCases").value];
+    document.getElementById("sInput").value = tc;
+}
+
+function* simulateManacher() {
+    let s = document.getElementById("sInput").value;
+    if (!s || s.length === 0) return;
+
+    let T = "^";
+    for (let i = 0; i < s.length; i++) {
+        T += "#" + s[i];
+    }
+    T += "#$";
+    
+    let n = T.length;
+    let P = new Array(n).fill(0);
+    let C = 0, R = 0;
+
+    const snap = (line, msg, type="info", actionObj={}) => ({
+        line, msg, type,
+        T, P: [...P], n, s,
+        C, R, 
+        i: actionObj.i !== undefined ? actionObj.i : null,
+        mirror: actionObj.mirror !== undefined ? actionObj.mirror : null,
+        compareL: actionObj.compareL !== undefined ? actionObj.compareL : null,
+        compareR: actionObj.compareR !== undefined ? actionObj.compareR : null,
+        compareSuccess: actionObj.compareSuccess !== undefined ? actionObj.compareSuccess : null,
+        ansStart: actionObj.ansStart !== undefined ? actionObj.ansStart : null,
+        ansEnd: actionObj.ansEnd !== undefined ? actionObj.ansEnd : null,
+        pUpdate: actionObj.pUpdate || false
+    });
+
+    yield snap(10, `String transformed to avoid bounds checking and even length issues.\nT = "${T}"`, "info");
+    yield snap(13, `Initialized P array of size ${n} with 0s. Set Center (C)=0, Right Bound (R)=0.`, "info");
+
+    for (let i = 1; i < n - 1; i++) {
+        let mirror = 2 * C - i;
+        yield snap(16, `Loop iteration i=${i}. Calculating mirror of i around C (${C}): mirror = 2*${C} - ${i} = ${mirror}.`, "info", {i, mirror});
+
+        if (i < R) {
+            let p_mirror = P[mirror];
+            let dist = R - i;
+            P[i] = Math.min(dist, p_mirror);
+            yield snap(19, `i (${i}) < R (${R}). We can safely copy symmetric values! P[${i}] = min(R-i: ${dist}, P[mirror]: ${p_mirror}) = ${P[i]}.`, "update", {i, mirror, pUpdate: true});
+        } else {
+            yield snap(18, `i (${i}) >= R (${R}). Cannot use previously computed mirror values. P[${i}] remains ${P[i]}.`, "info", {i, mirror});
+        }
+
+        // Expansion
+        while (true) {
+            let l = i - 1 - P[i];
+            let r = i + 1 + P[i];
+            
+            yield snap(23, `Trying to expand around i=${i}. Comparing T[${l}]='${T[l]}' with T[${r}]='${T[r]}'.`, "info", {i, mirror, compareL: l, compareR: r});
+            
+            if (T[l] === T[r]) {
+                P[i]++;
+                yield snap(24, `Match! Expanded P[${i}] to ${P[i]}.`, "success", {i, mirror, compareL: l, compareR: r, compareSuccess: true, pUpdate: true});
+            } else {
+                yield snap(23, `Mismatch. Expansion stopped at P[${i}] = ${P[i]}.`, "danger", {i, mirror, compareL: l, compareR: r, compareSuccess: false});
+                break;
+            }
+        }
+
+        // Adjust Center
+        if (i + P[i] > R) {
+            let oldC = C, oldR = R;
+            C = i;
+            R = i + P[i];
+            yield snap(29, `Palindrome bounds expanded past R. Adjusting Center (C) from ${oldC} to ${C}, and Right Bound (R) from ${oldR} to ${R}.`, "purple", {i, mirror});
+        }
+    }
+
+    // Find result
+    let maxLen = 0, centerIndex = 0;
+    for (let i = 1; i < n - 1; i++) {
+        if (P[i] > maxLen) {
+            maxLen = P[i];
+            centerIndex = i;
+        }
+    }
+    
+    yield snap(38, `Loop finished. Found max length ${maxLen} at center index ${centerIndex}.`, "info");
+    
+    let start = Math.floor((centerIndex - maxLen) / 2);
+    let finalStr = s.substring(start, start + maxLen);
+    
+    yield snap(41, `Extracted substring from original string. Returning "${finalStr}".`, "success", {ansStart: centerIndex - maxLen, ansEnd: centerIndex + maxLen});
+}
+
+function prepareExecution() {
+    try {
+        events = [];
+        const g = simulateManacher();
+        while(true) {
+            const r = g.next();
+            if(r.done) break;
+            events.push(r.value);
+        }
+        
+        document.getElementById("log").innerHTML = "";
+        jumpToStep(0);
+        log(`[System] Prepared ${events.length} steps. Click Play or Next Step.`);
+    } catch(err) {
+        console.error(err);
+        log(`[Error] Execution failed: ${err.message}`, "log-danger");
+    }
+}
+
+function applyEventData(e) {
+    if (e.ansStart !== null) {
+        document.getElementById("phaseIndicator").innerText = `Found Longest Palindromic Substring`;
+    } else if (e.i !== null) {
+        document.getElementById("phaseIndicator").innerText = `Evaluating Index i = ${e.i}`;
+    } else {
+        document.getElementById("phaseIndicator").innerText = `Initialization`;
+    }
+    
+    document.getElementById("val-C").innerText = e.C !== undefined ? e.C : "-";
+    document.getElementById("val-R").innerText = e.R !== undefined ? e.R : "-";
+    document.getElementById("val-i").innerText = e.i !== null ? e.i : "-";
+    document.getElementById("val-mirror").innerText = e.mirror !== null ? e.mirror : "-";
+
+    // Arrays Visualization Strategy
+    if (e.T && e.P) {
+        let tHtml = "";
+        let pHtml = "";
+        
+        for (let idx = 0; idx < e.n; idx++) {
+            let clsT = "";
+            let clsP = "";
+            let ptrs = [];
+            
+            // Highlight P array updates
+            if (e.pUpdate && idx === e.i) {
+                clsP = "cell-p-update";
+            }
+            
+            // Final Answer Highlight
+            if (e.ansStart !== null && e.ansEnd !== null && idx >= e.ansStart && idx <= e.ansEnd) {
+                if (e.T[idx] !== '#' && e.T[idx] !== '^' && e.T[idx] !== '$') {
+                    clsT += " cell-ans";
+                }
+            }
+
+            // Pointers logic
+            if (e.compareL === idx || e.compareR === idx) {
+                if (e.compareSuccess === true) {
+                    clsT += " cell-compare";
+                } else if (e.compareSuccess === false) {
+                    clsT += " cell-fail";
+                } else {
+                    clsT += " cell-compare"; // Neutral check
+                }
+            }
+
+            if (idx === e.C) {
+                clsT += " cell-c";
+                ptrs.push(`<span style="color:var(--accent)">C</span>`);
+            }
+            if (idx === e.mirror && e.mirror > 0) {
+                clsT += " cell-mirror";
+                ptrs.push(`<span style="color:var(--neighbor)">mir</span>`);
+            }
+            if (idx === e.i) {
+                clsT += " cell-i";
+                ptrs.push(`<span style="color:var(--active)">i</span>`);
+            }
+            if (idx === e.R) {
+                clsT += " cell-r";
+                ptrs.push(`<span style="color:var(--purple)">R</span>`);
+            }
+
+            let lbl = ptrs.length > 0 ? `<div class="ptr-label">${ptrs.join(', ')}</div>` : "";
+
+            tHtml += `<div class="array-item"><span class="array-idx">${idx}</span><div class="array-cell ${clsT}">${e.T[idx]}${lbl}</div></div>`;
+            pHtml += `<div class="array-item"><span class="array-idx" style="visibility:hidden;">${idx}</span><div class="array-cell ${clsP}">${e.P[idx]}</div></div>`;
+        }
+        
+        document.getElementById("tArray").innerHTML = tHtml;
+        document.getElementById("pArray").innerHTML = pHtml;
+    }
+
+    // Code Highlight
+    if (e.line !== undefined && e.line !== null) highlight(e.line);
+}
+
+function jumpToStep(targetIndex) {
+    document.getElementById("log").innerHTML = "";
+    ptr = 0;
+    while(ptr <= targetIndex && ptr < events.length) {
+        const isLast = (ptr === targetIndex);
+        const e = events[ptr++];
+        
+        if (isLast) applyEventData(e);
+        
+        // Log formatting
+        if (e.type === "success") log(e.msg, "log-success");
+        else if (e.type === "update") log(e.msg, "log-update");
+        else if (e.type === "purple") log(e.msg, "log-purple");
+        else if (e.type === "info") log(e.msg, "log-info");
+        else if (e.type === "danger") log(e.msg, "log-danger");
+        else log(`> ${e.msg}`);
+    }
+}
+
+function nextStep() {
+    if(ptr >= events.length) { pause(); return; }
+    jumpToStep(ptr);
+}
+function prevStep() {
+    pause();
+    if(ptr <= 1) { jumpToStep(0); return; }
+    jumpToStep(ptr - 2);
+}
+function play() {
+    pause();
+    if (ptr >= events.length) prepareExecution();
+    nextStep(); 
+    autoTimer = setInterval(nextStep, 1500); 
+}
+function pause() { if(autoTimer) clearInterval(autoTimer); }
+
+window.onload = () => {
+    loadSelectedTest();
+    prepareExecution();
+};
+</script>
+</body>
+</html>
